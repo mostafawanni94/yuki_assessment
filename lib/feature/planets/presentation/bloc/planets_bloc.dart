@@ -11,7 +11,7 @@ export 'planets_event.dart';
 class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
   PlanetsBloc({IPlanetsRepository? repository})
       : _repository = repository ?? GetIt.I<IPlanetsRepository>(),
-        super(const BaseState.init());
+        super(const Init());
 
   final IPlanetsRepository _repository;
 
@@ -48,7 +48,7 @@ class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
 
   Future<void> _fetchPage() async {
     if (isClosed) return;
-    emit(const BaseState.loading());
+    emit(const Loading());
 
     final result = await _repository.getPlanets(
       page: _currentPage,
@@ -63,9 +63,9 @@ class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
       _planets.addAll(incoming);
       _hasMore = incoming.length == 10;
       if (_hasMore) _currentPage++;
-      emit(BaseState.success(List.unmodifiable(_planets)));
+      emit(Success(List.unmodifiable(_planets)));
     } else if (result is IsError<List<PlanetModel>>) {
-      emit(BaseState.failure(result.error, retry));
+      emit(Failure(result.error, retry));
     }
   }
 

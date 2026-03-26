@@ -11,7 +11,7 @@ import 'package:swapi_planets/core/result/result.dart';
 /// Single Responsibility: safe emit + unified action execution + cancel token.
 abstract class BaseBloc<T> extends Cubit<BaseState<T>> {
   BaseBloc([T? data])
-      : super(data != null ? BaseState.success(data) : const BaseState.init());
+      : super(data != null ? Success(data) : const Init());
 
   CancelToken _cancelToken = CancelToken();
   CancelToken get cancelToken => _cancelToken;
@@ -30,27 +30,27 @@ abstract class BaseBloc<T> extends Cubit<BaseState<T>> {
     try {
       if (isClosed) return;
       _cancelToken = CancelToken();
-      await safeEmit(const BaseState.loading());
+      await safeEmit(const Loading());
 
       final result = await action();
       if (isClosed) return;
 
       if (result is IsSuccess<T>) {
         onSuccess?.call(result.model as T);
-        await safeEmit(BaseState.success(result.model));
+        await safeEmit(Success(result.model));
       } else if (result is IsError<T>) {
         if (_isCancellation(result.error)) {
-          await safeEmit(const BaseState.init());
+          await safeEmit(const Init());
         } else {
           onError?.call(result.error);
-          await safeEmit(BaseState.failure(
+          await safeEmit(Failure(
             result.error,
             () => performAction(action, onSuccess: onSuccess, onError: onError),
           ));
         }
       }
     } catch (_) {
-      await safeEmit(BaseState.failure(
+      await safeEmit(Failure(
         const UnknownException(),
         () => performAction(action, onSuccess: onSuccess, onError: onError),
       ));
