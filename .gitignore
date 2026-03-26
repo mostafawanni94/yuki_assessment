@@ -9,9 +9,7 @@ build/
 *.class
 *.log
 
-# Generated code — committed only in CI
-*.g.dart
-*.freezed.dart
+# Generated code — committed so assessors can run without build_runner
 
 # Android
 **/android/captures/
