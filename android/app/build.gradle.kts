@@ -6,22 +6,22 @@ plugins {
 
 android {
     namespace = "com.yousef.swapi_planets"
-    compileSdk = 35
-    ndkVersion = "27.0.12077973"
+    compileSdk = 36
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
         applicationId = "com.yousef.swapi_planets"
-        minSdk = 23
-        targetSdk = 35
+        minSdk = flutter.minSdkVersion
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
