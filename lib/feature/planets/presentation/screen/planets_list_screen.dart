@@ -36,7 +36,7 @@ class _PlanetsListScreenState extends State<PlanetsListScreen>
     _bloc = GetIt.I<PlanetsBloc>();
     _scroll = ScrollController()..addListener(_onScroll);
     _headerCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 600));
+        vsync: this, duration: const Duration(milliseconds: 700));
     _headerFade =
         CurvedAnimation(parent: _headerCtrl, curve: Curves.easeOut);
     _bloc.loadPlanets();
@@ -63,21 +63,19 @@ class _PlanetsListScreenState extends State<PlanetsListScreen>
         child: Scaffold(
           backgroundColor: AppColors.bg,
           body: Stack(children: [
-            // Star field — full screen behind everything
             const Positioned.fill(child: StarFieldBackground()),
-            // Main content
             CustomScrollView(
               controller: _scroll,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 _buildSliverAppBar(),
                 BlocBuilder<PlanetsBloc, BaseState<List<PlanetModel>>>(
-                  builder: (ctx, state) => state.when(
-                    init: () => const SliverToBoxAdapter(
-                        child: SizedBox.shrink()),
-                    loading: () => _buildLoading(),
-                    success: (p) => _buildList(p ?? []),
-                    failure: (e, r) => _buildError(e, r),
+                  builder: (_, state) => state.when(
+                    init: () =>
+                        const SliverToBoxAdapter(child: SizedBox.shrink()),
+                    loading: _buildLoading,
+                    success: (planets) => _buildSuccess(planets ?? []),
+                    failure: (error, retry) => _buildFailure(error, retry),
                   ),
                 ),
               ],
@@ -110,22 +108,23 @@ class _PlanetsListScreenState extends State<PlanetsListScreen>
 
   // ─── State builders ───────────────────────────────────────────────────────
 
-  Widget _buildLoading() => SliverFillRemaining(
-        child: _bloc.currentPage == 1
-            ? const PlanetsLoadingShimmer()
-            : _buildLoadingList(),
-      );
+  Widget _buildLoading() {
+    // Page 1 → full shimmer. Page 2+ → keep visible list + append spinner.
+    final cached = _bloc.cachedPlanets;
+    if (cached.isEmpty) {
+      return const SliverFillRemaining(
+          child: PlanetsLoadingShimmer());
+    }
+    return SliverToBoxAdapter(
+      child: _PlanetsList(
+        planets: cached,
+        isLoadingMore: true,
+        onTap: _navigateToDetail,
+      ),
+    );
+  }
 
-  Widget _buildLoadingList() =>
-      BlocBuilder<PlanetsBloc, BaseState<List<PlanetModel>>>(
-        builder: (_, state) => _PlanetsList(
-          planets: state.model ?? [],
-          isLoadingMore: true,
-          onTap: _navigateToDetail,
-        ),
-      );
-
-  Widget _buildList(List<PlanetModel> planets) {
+  Widget _buildSuccess(List<PlanetModel> planets) {
     if (planets.isEmpty) {
       return SliverFillRemaining(
         child: Center(
@@ -150,10 +149,10 @@ class _PlanetsListScreenState extends State<PlanetsListScreen>
     );
   }
 
-  Widget _buildError(dynamic error, VoidCallback retry) =>
+  Widget _buildFailure(dynamic error, VoidCallback retry) =>
       SliverFillRemaining(
-        child: Center(
-            child: ErrorStateWidget(error: error, onRetry: retry)),
+        child:
+            Center(child: ErrorStateWidget(error: error, onRetry: retry)),
       );
 
   void _navigateToDetail(PlanetModel planet) =>

@@ -4,14 +4,13 @@ import 'package:get_it/get_it.dart';
 import 'package:swapi_planets/core/base_bloc/base_state.dart';
 import 'package:swapi_planets/feature/planets/domain/model/planet_model.dart';
 import 'package:swapi_planets/feature/planets/domain/repository/i_planets_repository.dart';
-import 'planets_event.dart';
 
 export 'planets_event.dart';
 
-/// Manages the state for the planets list screen.
+/// Manages the planets list with pagination.
 ///
-/// Extends [Cubit] directly (not [BaseBloc]) because pagination requires
-/// accumulating pages — BaseBloc replaces state on each call.
+/// Extends Cubit directly (not BaseBloc) because pagination accumulates
+/// pages — BaseBloc replaces state per action.
 class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
   PlanetsBloc({IPlanetsRepository? repository})
       : _repository = repository ?? GetIt.I<IPlanetsRepository>(),
@@ -19,7 +18,6 @@ class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
 
   final IPlanetsRepository _repository;
 
-  // ─── Pagination state ────────────────────────────────────────────────────
   int _currentPage = 1;
   bool _hasMore = true;
   CancelToken _cancelToken = CancelToken();
@@ -28,24 +26,25 @@ class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
   bool get hasMore => _hasMore;
   int get currentPage => _currentPage;
 
-  // ─── Public events ────────────────────────────────────────────────────────
+  /// Last known successful list — safe to read during loading state.
+  List<PlanetModel> get cachedPlanets =>
+      List.unmodifiable(_planets);
 
-  /// Loads the first page — clears any existing data.
+  // ─── Public API ───────────────────────────────────────────────────────────
+
   Future<void> loadPlanets() async {
     _reset();
     await _fetchPage();
   }
 
-  /// Loads the next page — appends to existing list.
   Future<void> loadMore() async {
     if (!_hasMore || state.isLoading) return;
     await _fetchPage();
   }
 
-  /// Retries the last failed page.
   Future<void> retry() => _fetchPage();
 
-  // ─── Private helpers ──────────────────────────────────────────────────────
+  // ─── Private ──────────────────────────────────────────────────────────────
 
   void _reset() {
     _cancelToken.cancel();
@@ -70,7 +69,6 @@ class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
       case IsSuccess<List<PlanetModel>>():
         final incoming = result.model ?? [];
         _planets.addAll(incoming);
-        // SWAPI returns 10 per page; fewer = last page
         _hasMore = incoming.length == 10;
         if (_hasMore) _currentPage++;
         emit(BaseState.success(List.unmodifiable(_planets)));
