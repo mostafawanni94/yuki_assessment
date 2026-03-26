@@ -2,22 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:swapi_planets/core/base_bloc/base_state.dart';
-import 'package:swapi_planets/core/theme/app_theme.dart';
+import 'package:swapi_planets/core/l10n/app_strings.dart';
+import 'package:swapi_planets/core/theme/app_colors.dart';
+import 'package:swapi_planets/core/theme/app_text_styles.dart';
 import 'package:swapi_planets/core/ui/error_handling/error_state_widget.dart';
+import 'package:swapi_planets/core/ui/widgets/glowing_planet_orb.dart';
+import 'package:swapi_planets/core/ui/widgets/star_field_background.dart';
 import 'package:swapi_planets/feature/planet_detail/presentation/bloc/planet_detail_bloc.dart';
-import 'package:swapi_planets/feature/planet_detail/presentation/widgets/detail_info_row.dart';
-import 'package:swapi_planets/feature/planet_detail/presentation/widgets/detail_section_card.dart';
 import 'package:swapi_planets/feature/planets/domain/model/planet_model.dart';
 
-/// Planet detail screen — shows all available SWAPI planet data.
-///
-/// Receives [PlanetModel] via GoRouter extra — already has film titles
-/// from the list screen, then fetches resident names on init.
 class PlanetDetailScreen extends StatefulWidget {
   const PlanetDetailScreen({super.key, required this.planet});
-
   static const String route = '/planet';
-
   final PlanetModel planet;
 
   @override
@@ -30,9 +26,7 @@ class _PlanetDetailScreenState extends State<PlanetDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Create a fresh bloc per detail screen — not a singleton
-    _bloc = PlanetDetailBloc();
-    _bloc.loadDetail(widget.planet);
+    _bloc = PlanetDetailBloc()..loadDetail(widget.planet);
   }
 
   @override
@@ -45,57 +39,52 @@ class _PlanetDetailScreenState extends State<PlanetDetailScreen> {
   Widget build(BuildContext context) => BlocProvider.value(
         value: _bloc,
         child: Scaffold(
+          backgroundColor: AppColors.bg,
           body: BlocBuilder<PlanetDetailBloc, BaseState<PlanetModel>>(
-            builder: (context, state) => state.when(
+            builder: (_, state) => state.when(
               init: () => const SizedBox.shrink(),
-              loading: () => _buildLoadingScaffold(),
-              success: (planet) => _buildDetail(planet ?? widget.planet),
-              failure: (error, retry) => _buildErrorScaffold(error, retry),
+              loading: () => _DetailLayout(
+                planet: widget.planet,
+                body: const Center(
+                  child: CircularProgressIndicator(color: AppColors.gold),
+                ),
+              ),
+              success: (p) => _DetailLayout(
+                planet: p ?? widget.planet,
+                body: _DetailBody(planet: p ?? widget.planet),
+              ),
+              failure: (e, r) => _DetailLayout(
+                planet: widget.planet,
+                body: Center(
+                  child: ErrorStateWidget(error: e, onRetry: r),
+                ),
+              ),
             ),
           ),
         ),
-      );
-
-  // ─── State builders ───────────────────────────────────────────────────────
-
-  Widget _buildLoadingScaffold() => _DetailScaffold(
-        planet: widget.planet,
-        child: const Center(child: CircularProgressIndicator()),
-      );
-
-  Widget _buildErrorScaffold(dynamic error, VoidCallback retry) =>
-      _DetailScaffold(
-        planet: widget.planet,
-        child: Center(
-          child: ErrorStateWidget(error: error, onRetry: retry),
-        ),
-      );
-
-  Widget _buildDetail(PlanetModel planet) => _DetailScaffold(
-        planet: planet,
-        child: _DetailBody(planet: planet),
       );
 }
 
-// ─── Layout scaffold ──────────────────────────────────────────────────────────
+// ─── Layout shell ─────────────────────────────────────────────────────────────
 
-class _DetailScaffold extends StatelessWidget {
-  const _DetailScaffold({required this.planet, required this.child});
+class _DetailLayout extends StatelessWidget {
+  const _DetailLayout({required this.planet, required this.body});
   final PlanetModel planet;
-  final Widget child;
+  final Widget body;
 
   @override
-  Widget build(BuildContext context) => CustomScrollView(
-        slivers: [
+  Widget build(BuildContext context) => Stack(children: [
+        const Positioned.fill(child: StarFieldBackground(starCount: 80)),
+        CustomScrollView(slivers: [
           _PlanetSliverAppBar(planet: planet),
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.only(bottom: 32.h),
-              child: child,
+              padding: EdgeInsets.only(bottom: 40.h),
+              child: body,
             ),
           ),
-        ],
-      );
+        ]),
+      ]);
 }
 
 // ─── Sliver AppBar ────────────────────────────────────────────────────────────
@@ -104,60 +93,109 @@ class _PlanetSliverAppBar extends StatelessWidget {
   const _PlanetSliverAppBar({required this.planet});
   final PlanetModel planet;
 
+  // Derive orb gradient from planet name hash — same index as list
+  List<Color> get _colors {
+    final idx = planet.name.codeUnits
+        .fold(0, (sum, c) => sum + c);
+    return AppColors.planetGradientAt(idx);
+  }
+
   @override
   Widget build(BuildContext context) => SliverAppBar(
-        expandedHeight: 200.h,
+        expandedHeight: 260.h,
         pinned: true,
+        backgroundColor: AppColors.bg.withOpacity(0.92),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
         flexibleSpace: FlexibleSpaceBar(
-          title: Text(
-            planet.name,
-            style: context.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          background: _PlanetHero(name: planet.name),
-          titlePadding: EdgeInsets.only(left: 16.w, bottom: 16.h),
+          collapseMode: CollapseMode.parallax,
+          titlePadding: EdgeInsets.only(left: 52.w, bottom: 14.h),
+          title: Text(planet.name,
+              style: AppTextStyles.headingMedium.copyWith(
+                shadows: [
+                  Shadow(
+                      color: Colors.black.withOpacity(0.6),
+                      blurRadius: 8)
+                ],
+              )),
+          background: _AppBarBackground(planet: planet, colors: _colors),
         ),
       );
 }
 
-class _PlanetHero extends StatelessWidget {
-  const _PlanetHero({required this.name});
-  final String name;
+class _AppBarBackground extends StatelessWidget {
+  const _AppBarBackground(
+      {required this.planet, required this.colors});
+  final PlanetModel planet;
+  final List<Color> colors;
 
   @override
   Widget build(BuildContext context) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppTheme.primary, AppTheme.accent, AppTheme.secondary],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.bg,
+              colors.last.withOpacity(0.15),
+              AppColors.bg,
+            ],
+            stops: const [0.0, 0.5, 1.0],
           ),
         ),
         child: Center(
-          child: Container(
-            width: 100.r,
-            height: 100.r,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(colors: [
-                AppTheme.highlight.withOpacity(0.8),
-                AppTheme.accent,
-              ]),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.highlight.withOpacity(0.4),
-                  blurRadius: 24,
-                  spreadRadius: 4,
-                ),
-              ],
-            ),
-            child: Icon(Icons.public, size: 54.r, color: Colors.white),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(height: 32.h),
+              GlowingPlanetOrb(
+                size: 120.r,
+                colors: colors,
+                heroTag: 'planet_orb_${planet.url}',
+              ),
+              SizedBox(height: 14.h),
+              // Population badge
+              if (planet.population.isNotEmpty &&
+                  planet.population != 'unknown')
+                _PopulationBadge(population: planet.population),
+            ],
           ),
         ),
       );
 }
 
-// ─── Body ─────────────────────────────────────────────────────────────────────
+class _PopulationBadge extends StatelessWidget {
+  const _PopulationBadge({required this.population});
+  final String population;
+
+  String get _formatted {
+    final n = int.tryParse(population);
+    if (n == null) return population;
+    if (n >= 1000000000) return '${(n / 1e9).toStringAsFixed(1)}B';
+    if (n >= 1000000) return '${(n / 1e6).toStringAsFixed(1)}M';
+    if (n >= 1000) return '${(n / 1e3).toStringAsFixed(1)}K';
+    return '$n';
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+        decoration: BoxDecoration(
+          color: AppColors.goldGlow,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+              color: AppColors.goldDim.withOpacity(0.5), width: 0.5),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.people_rounded,
+              size: 12.r, color: AppColors.gold),
+          SizedBox(width: 4.w),
+          Text('$_formatted inhabitants',
+              style: AppTextStyles.chip),
+        ]),
+      );
+}
+
+// ─── Detail body ──────────────────────────────────────────────────────────────
 
 class _DetailBody extends StatelessWidget {
   const _DetailBody({required this.planet});
@@ -167,141 +205,217 @@ class _DetailBody extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         children: [
           SizedBox(height: 8.h),
-          _PhysicsSection(planet: planet),
-          _EnvironmentSection(planet: planet),
-          if (planet.films.isNotEmpty) _FilmsSection(films: planet.films),
+          _SectionCard(
+            title: AppStrings.sectionOrbital,
+            icon: Icons.radar_rounded,
+            rows: [
+              _Row(AppStrings.fieldDiameter,
+                  '${AppStrings.display(planet.diameter)} ${AppStrings.unitKm}'),
+              _Row(AppStrings.fieldRotation,
+                  '${AppStrings.display(planet.rotationPeriod)} ${AppStrings.unitHours}'),
+              _Row(AppStrings.fieldOrbital,
+                  '${AppStrings.display(planet.orbitalPeriod)} ${AppStrings.unitDays}'),
+              _Row(AppStrings.fieldGravity,
+                  AppStrings.display(planet.gravity)),
+            ],
+          ),
+          _SectionCard(
+            title: AppStrings.sectionEnvironment,
+            icon: Icons.landscape_rounded,
+            rows: [
+              _Row(AppStrings.fieldClimate,
+                  AppStrings.display(planet.climate)),
+              _Row(AppStrings.fieldTerrain,
+                  AppStrings.display(planet.terrain)),
+              _Row(AppStrings.fieldSurfaceWater,
+                  '${AppStrings.display(planet.surfaceWater)}${AppStrings.unitPercent}'),
+            ],
+          ),
+          if (planet.films.isNotEmpty)
+            _ListSection(
+              title: AppStrings.sectionFilms,
+              icon: Icons.movie_creation_rounded,
+              items: planet.films,
+              itemIcon: Icons.star_rounded,
+              itemIconColor: AppColors.gold,
+            ),
           if (planet.residents.isNotEmpty)
-            _ResidentsSection(residents: planet.residents),
+            _ListSection(
+              title: AppStrings.sectionResidents,
+              icon: Icons.people_alt_rounded,
+              items: planet.residents,
+              itemIcon: Icons.person_rounded,
+              itemIconColor: AppColors.saberBlue,
+            ),
         ],
       );
 }
 
-class _PhysicsSection extends StatelessWidget {
-  const _PhysicsSection({required this.planet});
-  final PlanetModel planet;
+// ─── Section card ─────────────────────────────────────────────────────────────
+
+class _Row {
+  const _Row(this.label, this.value);
+  final String label;
+  final String value;
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.title,
+    required this.icon,
+    required this.rows,
+  });
+  final String title;
+  final IconData icon;
+  final List<_Row> rows;
 
   @override
-  Widget build(BuildContext context) => DetailSectionCard(
-        title: 'ORBITAL DATA',
-        icon: Icons.orbit,
-        child: Column(children: [
-          DetailInfoRow(
-            label: 'Diameter',
-            value: '${planet.diameter} km',
-            icon: Icons.straighten,
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.bgCard,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: AppColors.border, width: 0.5),
           ),
-          DetailInfoRow(
-            label: 'Rotation',
-            value: '${planet.rotationPeriod} hrs',
-            icon: Icons.rotate_right,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader(title: title, icon: icon),
+              Divider(
+                  height: 0,
+                  thickness: 0.5,
+                  color: AppColors.divider),
+              ...rows.map((r) => _InfoRow(label: r.label, value: r.value)),
+            ],
           ),
-          DetailInfoRow(
-            label: 'Orbital period',
-            value: '${planet.orbitalPeriod} days',
-            icon: Icons.loop,
+        ),
+      );
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.icon});
+  final String title;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 10.h),
+        child: Row(children: [
+          Container(
+            width: 28.r,
+            height: 28.r,
+            decoration: BoxDecoration(
+              color: AppColors.goldGlow,
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Icon(icon, size: 15.r, color: AppColors.gold),
           ),
-          DetailInfoRow(
-            label: 'Gravity',
-            value: planet.gravity,
-            icon: Icons.arrow_downward,
-          ),
+          SizedBox(width: 10.w),
+          Text(title, style: AppTextStyles.headingSmall),
         ]),
       );
 }
 
-class _EnvironmentSection extends StatelessWidget {
-  const _EnvironmentSection({required this.planet});
-  final PlanetModel planet;
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+  final String label;
+  final String value;
 
   @override
-  Widget build(BuildContext context) => DetailSectionCard(
-        title: 'ENVIRONMENT',
-        icon: Icons.landscape,
-        child: Column(children: [
-          DetailInfoRow(
-            label: 'Climate',
-            value: planet.climate,
-            icon: Icons.thermostat,
-          ),
-          DetailInfoRow(
-            label: 'Terrain',
-            value: planet.terrain,
-            icon: Icons.terrain,
-          ),
-          DetailInfoRow(
-            label: 'Surface water',
-            value: '${planet.surfaceWater}%',
-            icon: Icons.water,
-          ),
-          DetailInfoRow(
-            label: 'Population',
-            value: _formatPopulation(planet.population),
-            icon: Icons.people,
-          ),
-        ]),
-      );
-
-  String _formatPopulation(String raw) {
-    final n = int.tryParse(raw);
-    if (n == null) return raw;
-    if (n >= 1000000000) return '${(n / 1000000000).toStringAsFixed(1)}B';
-    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
-    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
-    return raw;
-  }
-}
-
-class _FilmsSection extends StatelessWidget {
-  const _FilmsSection({required this.films});
-  final List<String> films;
-
-  @override
-  Widget build(BuildContext context) => DetailSectionCard(
-        title: 'APPEARS IN',
-        icon: Icons.movie_outlined,
-        child: Column(
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsets.symmetric(
+            horizontal: 16.w, vertical: 11.h),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: films
-              .map((title) => Padding(
-                    padding: EdgeInsets.symmetric(vertical: 4.h),
-                    child: Row(children: [
-                      Icon(Icons.star, size: 14.r, color: AppTheme.highlight),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: Text(title,
-                            style: context.textTheme.bodyMedium),
-                      ),
-                    ]),
-                  ))
-              .toList(),
+          children: [
+            SizedBox(
+              width: 110.w,
+              child: Text(label,
+                  style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.textSecondary)),
+            ),
+            Expanded(
+              child: Text(value, style: AppTextStyles.bodyMedium),
+            ),
+          ],
         ),
       );
 }
 
-class _ResidentsSection extends StatelessWidget {
-  const _ResidentsSection({required this.residents});
-  final List<String> residents;
+// ─── List section (films / residents) ────────────────────────────────────────
+
+class _ListSection extends StatelessWidget {
+  const _ListSection({
+    required this.title,
+    required this.icon,
+    required this.items,
+    required this.itemIcon,
+    required this.itemIconColor,
+  });
+  final String title;
+  final IconData icon;
+  final List<String> items;
+  final IconData itemIcon;
+  final Color itemIconColor;
 
   @override
-  Widget build(BuildContext context) => DetailSectionCard(
-        title: 'KNOWN RESIDENTS',
-        icon: Icons.person_outline,
-        child: Wrap(
-          spacing: 8.w,
-          runSpacing: 6.h,
-          children: residents
-              .map((name) => Chip(
-                    avatar: Icon(Icons.person, size: 14.r,
-                        color: AppTheme.highlight),
-                    label: Text(name,
-                        style: context.textTheme.labelSmall),
-                    backgroundColor:
-                        AppTheme.accent.withOpacity(0.3),
-                    side: BorderSide(
-                        color: AppTheme.highlight.withOpacity(0.3),
-                        width: 0.5),
-                  ))
-              .toList(),
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.bgCard,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: AppColors.border, width: 0.5),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader(title: title, icon: icon),
+              Divider(
+                  height: 0,
+                  thickness: 0.5,
+                  color: AppColors.divider),
+              SizedBox(height: 6.h),
+              ...items.map((item) => _ListItemRow(
+                    text: item,
+                    icon: itemIcon,
+                    iconColor: itemIconColor,
+                  )),
+              SizedBox(height: 6.h),
+            ],
+          ),
         ),
+      );
+}
+
+class _ListItemRow extends StatelessWidget {
+  const _ListItemRow({
+    required this.text,
+    required this.icon,
+    required this.iconColor,
+  });
+  final String text;
+  final IconData icon;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsets.symmetric(
+            horizontal: 16.w, vertical: 8.h),
+        child: Row(children: [
+          Container(
+            width: 24.r,
+            height: 24.r,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6.r),
+            ),
+            child: Icon(icon, size: 13.r, color: iconColor),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+              child: Text(text, style: AppTextStyles.bodyMedium)),
+        ]),
       );
 }
