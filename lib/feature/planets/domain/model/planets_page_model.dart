@@ -1,19 +1,27 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'planet_model.dart';
 
-part 'planets_page_model.freezed.dart';
-part 'planets_page_model.g.dart';
-
 /// SWAPI paginated envelope: { count, next, previous, results }.
-@freezed
-class PlanetsPageModel with _$PlanetsPageModel {
-  const factory PlanetsPageModel({
-    required int count,
-    String? next,
-    String? previous,
-    required List<PlanetModel> results,
-  }) = _PlanetsPageModel;
+/// Plain Dart class — no code generation, no part directives.
+class PlanetsPageModel {
+  const PlanetsPageModel({
+    required this.count,
+    this.next,
+    this.previous,
+    required this.results,
+  });
+
+  final int count;
+  final String? next;
+  final String? previous;
+  final List<PlanetModel> results;
 
   factory PlanetsPageModel.fromJson(Map<String, dynamic> json) =>
-      _$PlanetsPageModelFromJson(json);
+      PlanetsPageModel(
+        count: (json['count'] as num).toInt(),
+        next: json['next'] as String?,
+        previous: json['previous'] as String?,
+        results: (json['results'] as List<dynamic>)
+            .map((e) => PlanetModel.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
 }

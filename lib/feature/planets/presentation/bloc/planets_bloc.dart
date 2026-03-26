@@ -2,15 +2,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:swapi_planets/core/base_bloc/base_state.dart';
+import 'package:swapi_planets/core/result/result.dart';
 import 'package:swapi_planets/feature/planets/domain/model/planet_model.dart';
 import 'package:swapi_planets/feature/planets/domain/repository/i_planets_repository.dart';
 
 export 'planets_event.dart';
 
-/// Manages the planets list with pagination.
-///
-/// Extends Cubit directly (not BaseBloc) because pagination accumulates
-/// pages — BaseBloc replaces state per action.
 class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
   PlanetsBloc({IPlanetsRepository? repository})
       : _repository = repository ?? GetIt.I<IPlanetsRepository>(),
@@ -26,11 +23,8 @@ class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
   bool get hasMore => _hasMore;
   int get currentPage => _currentPage;
 
-  /// Last known successful list — safe to read during loading state.
-  List<PlanetModel> get cachedPlanets =>
-      List.unmodifiable(_planets);
-
-  // ─── Public API ───────────────────────────────────────────────────────────
+  /// Last known list — safe to read during loading state (pagination).
+  List<PlanetModel> get cachedPlanets => List.unmodifiable(_planets);
 
   Future<void> loadPlanets() async {
     _reset();
@@ -43,8 +37,6 @@ class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
   }
 
   Future<void> retry() => _fetchPage();
-
-  // ─── Private ──────────────────────────────────────────────────────────────
 
   void _reset() {
     _cancelToken.cancel();
@@ -65,16 +57,15 @@ class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
 
     if (isClosed) return;
 
-    switch (result) {
-      case IsSuccess<List<PlanetModel>>():
-        final incoming = result.model ?? [];
-        _planets.addAll(incoming);
-        _hasMore = incoming.length == 10;
-        if (_hasMore) _currentPage++;
-        emit(BaseState.success(List.unmodifiable(_planets)));
-
-      case IsError<List<PlanetModel>>():
-        emit(BaseState.failure(result.error, retry));
+    // Destructure via switch — IsSuccess/IsError are subtypes of MyResult
+    if (result is IsSuccess<List<PlanetModel>>) {
+      final incoming = result.model ?? [];
+      _planets.addAll(incoming);
+      _hasMore = incoming.length == 10;
+      if (_hasMore) _currentPage++;
+      emit(BaseState.success(List.unmodifiable(_planets)));
+    } else if (result is IsError<List<PlanetModel>>) {
+      emit(BaseState.failure(result.error, retry));
     }
   }
 

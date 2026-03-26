@@ -10,7 +10,6 @@ import 'package:swapi_planets/feature/planets/domain/model/planets_page_model.da
 
 // ─── Fixture factories ────────────────────────────────────────────────────────
 
-/// Builds a minimal [PlanetModel] for tests.
 PlanetModel fakePlanet({
   String name = 'Tatooine',
   List<String> films = const ['https://swapi.dev/api/films/1/'],
@@ -33,7 +32,6 @@ PlanetModel fakePlanet({
       edited: '2014-12-20T20:58:18.411000Z',
     );
 
-/// Builds a [PlanetsPageModel] wrapping [planets].
 PlanetsPageModel fakePage({
   required List<PlanetModel> planets,
   String? next,
@@ -45,22 +43,18 @@ PlanetsPageModel fakePage({
       results: planets,
     );
 
-// ─── Result factories ─────────────────────────────────────────────────────────
+// ─── Result helpers ───────────────────────────────────────────────────────────
 
-MyResult<T> ok<T>(T value) => MyResult.isSuccess(value);
-MyResult<T> err<T>([Exception? _]) =>
-    const MyResult.isError(UnknownException());
+IsSuccess<T> ok<T>(T value) => IsSuccess<T>(value);
 
-// ─── Common error results ─────────────────────────────────────────────────────
+IsError<T> err<T>() => IsError<T>(const UnknownException());
 
-const MyResult<String> kTimeout =
-    MyResult.isError(TimeoutException());
-const MyResult<String> kNotFound =
-    MyResult.isError(NotFoundException());
-const MyResult<String> kNoConnection =
-    MyResult.isError(ConnectionException());
-const MyResult<String> kBadRequest =
-    MyResult.isError(BadRequestException(message: 'bad'));
+// ─── Common error instances ───────────────────────────────────────────────────
+
+const IsError<String> kTimeout    = IsError(TimeoutException());
+const IsError<String> kNotFound   = IsError(NotFoundException());
+const IsError<String> kNoConn     = IsError(ConnectionException());
+const IsError<String> kBadRequest = IsError(BadRequestException(message: 'bad'));
 
 // ─── Cancel token ─────────────────────────────────────────────────────────────
 

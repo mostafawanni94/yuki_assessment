@@ -52,7 +52,7 @@ void main() {
       'loadDetail emits [loading, failure] on error',
       build: () => PlanetDetailBloc(repository: fakeRepo),
       setUp: () => fakeRepo.detailResult =
-          const MyResult.isError(TimeoutException()),
+          IsError(TimeoutException()),
       act: (bloc) => bloc.loadDetail(fakePlanet()),
       expect: () => [
         isA<Loading<PlanetModel>>(),
@@ -83,7 +83,7 @@ void main() {
       'failure state has retry callback wired',
       build: () => PlanetDetailBloc(repository: fakeRepo),
       setUp: () => fakeRepo.detailResult =
-          const MyResult.isError(TimeoutException()),
+          IsError(TimeoutException()),
       act: (bloc) => bloc.loadDetail(fakePlanet()),
       verify: (bloc) {
         expect(bloc.state, isA<Failure<PlanetModel>>());
