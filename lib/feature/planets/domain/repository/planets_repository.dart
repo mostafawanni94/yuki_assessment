@@ -23,7 +23,7 @@ class PlanetsRepository implements IPlanetsRepository {
       cancelToken: cancelToken,
     );
 
-    if (pageResult is IsError) {
+    if (pageResult is IsError<PlanetsPageModel>) {
       return IsError(pageResult.error);
     }
 
