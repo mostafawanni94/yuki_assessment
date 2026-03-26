@@ -8,12 +8,16 @@ import 'package:swapi_planets/core/errors/unknown_exception.dart';
 import 'package:swapi_planets/core/result/result.dart';
 
 /// Generic base for all feature BLoCs / Cubits.
-///
-/// Single Responsibility: handles safe emit + unified action execution.
-/// DRY: error mapping and retry wiring done once here.
+/// Single Responsibility: safe emit + unified action execution + cancel token.
+/// DRY: error mapping, retry wiring, cancellation done once here.
 abstract class BaseBloc<T> extends Cubit<BaseState<T>> {
   BaseBloc([T? data])
       : super(data != null ? BaseState.success(data) : const BaseState.init());
+
+  CancelToken _cancelToken = CancelToken();
+
+  /// Exposed so subclasses can pass to repository calls.
+  CancelToken get cancelToken => _cancelToken;
 
   /// Emits only when cubit is still open.
   @protected
@@ -21,7 +25,7 @@ abstract class BaseBloc<T> extends Cubit<BaseState<T>> {
     if (!isClosed) emit(state);
   }
 
-  /// Runs [action], maps result to state, wires up retry.
+  /// Runs [action], maps result to state, auto-wires retry.
   @protected
   Future<void> performAction(
     Future<MyResult<T>> Function() action, {
@@ -30,9 +34,12 @@ abstract class BaseBloc<T> extends Cubit<BaseState<T>> {
   }) async {
     try {
       if (isClosed) return;
+      _cancelToken = CancelToken();
       await safeEmit(const BaseState.loading());
 
       final result = await action();
+      if (isClosed) return;
+
       switch (result) {
         case IsSuccess<T>():
           onSuccess?.call(result.model as T);
@@ -62,12 +69,17 @@ abstract class BaseBloc<T> extends Cubit<BaseState<T>> {
     }
   }
 
-  /// Returns true when the error represents a user-initiated cancellation.
   bool _isCancellation(dynamic error) {
     if (error is DioException && error.type == DioExceptionType.cancel) {
       return true;
     }
     if (error is CancelException) return true;
     return error.toString().toLowerCase().contains('cancelled');
+  }
+
+  @override
+  Future<void> close() {
+    _cancelToken.cancel();
+    return super.close();
   }
 }
