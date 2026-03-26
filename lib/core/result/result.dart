@@ -1,11 +1,17 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:swapi_planets/core/errors/base_exception.dart';
 
-part 'result.freezed.dart';
-
 /// Sealed result type — avoids throwing exceptions across layers.
-@Freezed(genericArgumentFactories: true)
-sealed class MyResult<T> with _$MyResult<T> {
-  const factory MyResult.isSuccess([T? model]) = IsSuccess<T>;
-  const factory MyResult.isError(BaseException error) = IsError<T>;
+/// Plain Dart sealed class — no code generation needed.
+sealed class MyResult<T> {
+  const MyResult();
+}
+
+final class IsSuccess<T> extends MyResult<T> {
+  const IsSuccess([this.model]);
+  final T? model;
+}
+
+final class IsError<T> extends MyResult<T> {
+  const IsError(this.error);
+  final BaseException error;
 }

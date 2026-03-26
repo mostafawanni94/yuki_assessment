@@ -105,7 +105,7 @@ void main() {
     test('keeps planet in list even when film fetch fails', () async {
       fakeDatasource.planetsResult = ok(fakePage(planets: [fakePlanet()]));
       fakeDatasource.filmResult =
-          const MyResult.isError(TimeoutException());
+          IsError(TimeoutException());
 
       final result = await repository.getPlanets(
         page: 1,
@@ -122,7 +122,7 @@ void main() {
 
     test('returns error when getPlanets datasource call fails', () async {
       fakeDatasource.planetsResult =
-          const MyResult.isError(TimeoutException());
+          IsError(TimeoutException());
 
       final result = await repository.getPlanets(
         page: 1,
@@ -177,7 +177,7 @@ void main() {
       );
       // All resident fetches fail
       fakeDatasource.residentResult =
-          const MyResult.isError(TimeoutException());
+          IsError(TimeoutException());
 
       final result = await repository.getPlanetDetail(
         planet: planet,
@@ -192,9 +192,9 @@ void main() {
 
     test('returns success even when both films and residents fail', () async {
       fakeDatasource.filmResult =
-          const MyResult.isError(TimeoutException());
+          IsError(TimeoutException());
       fakeDatasource.residentResult =
-          const MyResult.isError(TimeoutException());
+          IsError(TimeoutException());
 
       final result = await repository.getPlanetDetail(
         planet: fakePlanet(),

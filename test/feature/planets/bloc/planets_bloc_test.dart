@@ -55,7 +55,7 @@ void main() {
       'loadPlanets emits [loading, failure] on error',
       build: () => PlanetsBloc(repository: fakeRepo),
       setUp: () => fakeRepo.response =
-          const MyResult.isError(TimeoutException()),
+          IsError(TimeoutException()),
       act: (bloc) => bloc.loadPlanets(),
       expect: () => [
         isA<Loading<List<PlanetModel>>>(),
@@ -131,7 +131,7 @@ void main() {
       'failure state contains error and retry callback',
       build: () => PlanetsBloc(repository: fakeRepo),
       setUp: () => fakeRepo.response =
-          const MyResult.isError(TimeoutException()),
+          IsError(TimeoutException()),
       act: (bloc) => bloc.loadPlanets(),
       verify: (bloc) {
         final state = bloc.state;

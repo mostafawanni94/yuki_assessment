@@ -76,7 +76,7 @@ void main() {
 
     test('propagates error from ApiClient', () async {
       fakeClient.respondWith<PlanetsPageModel>(
-          const MyResult.isError(TimeoutException()));
+          IsError(TimeoutException()));
 
       final result = await datasource.getPlanets(
         page: 1,

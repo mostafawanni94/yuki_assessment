@@ -51,12 +51,12 @@ class ApiClient {
       );
       return _processResponse(response, converter);
     } on FormatException {
-      return MyResult.isError(
+      return IsError(
           const FormatResponseException('Format exception'));
     } on DioException catch (e) {
-      return MyResult.isError(_handleDioError(e));
+      return IsError(_handleDioError(e));
     } catch (_) {
-      return const MyResult.isError(UnknownException());
+      return const IsError(UnknownException());
     }
   }
 
@@ -103,13 +103,13 @@ class ApiClient {
     try {
       final data = response.data;
       if (data == null) {
-        return const MyResult.isError(
+        return IsError(
             FormatResponseException('Empty response'));
       }
       return _convert(data: data, converter: converter);
     } catch (e) {
       if (kDebugMode) print('[ApiClient] process error: $e');
-      return MyResult.isError(FormatResponseException('$e'));
+      return IsError(FormatResponseException('$e'));
     }
   }
 
@@ -122,10 +122,10 @@ class ApiClient {
           data.toString().length > _largeResponseThreshold;
       final result =
           useCompute ? await compute(converter, data) : converter(data);
-      return MyResult.isSuccess(result);
+      return IsSuccess(result);
     } catch (e) {
       if (kDebugMode) print('[ApiClient] convert error: $e');
-      return MyResult.isError(FormatResponseException('Conversion failed: $e'));
+      return IsError(FormatResponseException('Conversion failed: $e'));
     }
   }
 
