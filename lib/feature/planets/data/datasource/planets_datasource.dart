@@ -9,7 +9,7 @@ import 'i_planets_datasource.dart';
 
 /// Concrete SWAPI remote data source.
 /// Single Responsibility: raw HTTP calls only — no business logic.
-/// DRY: delegates all error mapping to [ApiClient].
+/// DRY: all three resolvers share [_resolveField] — one place to change.
 class PlanetsDatasource implements IPlanetsDatasource {
   PlanetsDatasource({ApiClient? client})
       : _client = client ?? GetIt.I<ApiClient>();
@@ -35,16 +35,40 @@ class PlanetsDatasource implements IPlanetsDatasource {
     required String filmUrl,
     required CancelToken cancelToken,
   }) =>
-      _client.request<String>(
-        method: HttpMethod.GET,
-        // filmUrl is absolute (https://swapi.dev/api/films/1/) —
-        // strip base so Dio doesn't double-prefix it.
-        url: _stripBase(filmUrl),
+      _resolveField(
+        url: filmUrl,
+        field: 'title',
         cancelToken: cancelToken,
-        converter: (json) => (json as Map<String, dynamic>)['title'] as String,
       );
 
-  /// Strips the base URL prefix from an absolute SWAPI URL.
+  @override
+  Future<MyResult<String>> getResidentName({
+    required String residentUrl,
+    required CancelToken cancelToken,
+  }) =>
+      _resolveField(
+        url: residentUrl,
+        field: 'name',
+        cancelToken: cancelToken,
+      );
+
+  // ─── DRY helper ──────────────────────────────────────────────────────────
+
+  /// Fetches an absolute SWAPI URL and extracts a single string [field].
+  /// DRY: both film titles and resident names are just "GET url → pick field".
+  Future<MyResult<String>> _resolveField({
+    required String url,
+    required String field,
+    required CancelToken cancelToken,
+  }) =>
+      _client.request<String>(
+        method: HttpMethod.GET,
+        url: _stripBase(url),
+        cancelToken: cancelToken,
+        converter: (json) => (json as Map<String, dynamic>)[field] as String,
+      );
+
+  /// Strips https://swapi.dev/api/ prefix so Dio doesn't double-prefix.
   String _stripBase(String url) =>
       url.replaceFirst('https://swapi.dev/api/', '');
 }
