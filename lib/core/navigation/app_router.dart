@@ -1,28 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:swapi_planets/feature/planets/presentation/screen/planets_list_screen.dart';
 
-/// Centralised route configuration.
-/// Routes will be added per feature branch during the assessment.
 final GlobalKey<NavigatorState> rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
 
+/// App-wide route configuration.
+/// Routes added per branch — each branch adds its own GoRoute entry.
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  initialLocation: '/',
+  initialLocation: PlanetsListScreen.route,
   routes: [
     GoRoute(
-      path: '/',
-      // Placeholder — replaced when planets feature is added.
-      builder: (_, __) => const _PlaceholderScreen(),
+      path: PlanetsListScreen.route,
+      builder: (_, __) => const PlanetsListScreen(),
     ),
+    // Planet detail route added in feat/planet-detail branch
   ],
 );
-
-class _PlaceholderScreen extends StatelessWidget {
-  const _PlaceholderScreen();
-
-  @override
-  Widget build(BuildContext context) => const Scaffold(
-        body: Center(child: Text('swapi_planets — base project')),
-      );
-}
