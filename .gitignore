@@ -1,0 +1,37 @@
+# Dart / Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-preload-cache/
+.pub/
+build/
+*.class
+*.log
+
+# Generated code — committed only in CI
+*.g.dart
+*.freezed.dart
+
+# Android
+**/android/captures/
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+*.jks
+.gradle/
+
+# iOS / macOS
+**/ios/**/Pods/
+**/ios/**/xcuserdata/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/macos/Flutter/ephemeral/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Coverage
+coverage/
