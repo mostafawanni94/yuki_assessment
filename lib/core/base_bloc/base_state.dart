@@ -5,6 +5,7 @@ import 'package:swapi_planets/core/errors/base_exception.dart';
 part 'base_state.freezed.dart';
 
 /// Sealed state shared by all BLoCs / Cubits.
+/// Freezed generates: when(), whenOrNull(), maybeWhen() on each variant.
 @Freezed(genericArgumentFactories: true)
 sealed class BaseState<T> with _$BaseState<T> {
   const factory BaseState.init() = Init<T>;
@@ -16,8 +17,9 @@ sealed class BaseState<T> with _$BaseState<T> {
   ) = Failure<T>;
 }
 
+/// Convenience getters — avoids casting at call site.
 extension BaseStateX<T> on BaseState<T> {
-  bool get isInit => this is Init<T>;
+  bool get isInit    => this is Init<T>;
   bool get isLoading => this is Loading<T>;
   bool get isSuccess => this is Success<T>;
   bool get isFailure => this is Failure<T>;
@@ -30,33 +32,5 @@ extension BaseStateX<T> on BaseState<T> {
   BaseException? get error => switch (this) {
         Failure<T>(error: final e) => e,
         _ => null,
-      };
-
-  R when<R>({
-    required R Function() init,
-    required R Function() loading,
-    required R Function(T? model) success,
-    required R Function(BaseException error, VoidCallback retry) failure,
-  }) =>
-      switch (this) {
-        Init<T>() => init(),
-        Loading<T>() => loading(),
-        Success<T>(model: final m) => success(m),
-        Failure<T>(error: final e, retry: final r) => failure(e, r),
-      };
-
-  R maybeWhen<R>({
-    required R Function() orElse,
-    R Function()? init,
-    R Function()? loading,
-    R Function(T? model)? success,
-    R Function(BaseException error, VoidCallback retry)? failure,
-  }) =>
-      switch (this) {
-        Init<T>() => init?.call() ?? orElse(),
-        Loading<T>() => loading?.call() ?? orElse(),
-        Success<T>(model: final m) => success?.call(m) ?? orElse(),
-        Failure<T>(error: final e, retry: final r) =>
-          failure?.call(e, r) ?? orElse(),
       };
 }

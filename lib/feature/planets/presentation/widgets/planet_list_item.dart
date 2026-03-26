@@ -1,89 +1,132 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:swapi_planets/core/theme/app_theme.dart';
+import 'package:swapi_planets/core/theme/app_colors.dart';
+import 'package:swapi_planets/core/theme/app_text_styles.dart';
+import 'package:swapi_planets/core/ui/widgets/glowing_planet_orb.dart';
 import 'package:swapi_planets/feature/planets/domain/model/planet_model.dart';
 
-/// Single planet row in the list.
-/// Single Responsibility: renders one planet — name + film chips.
+/// Pro planet card — name, climate/terrain, film chips, animated orb.
+/// Single Responsibility: renders one planet card.
 class PlanetListItem extends StatelessWidget {
   const PlanetListItem({
     super.key,
     required this.planet,
+    required this.index,
     required this.onTap,
   });
 
   final PlanetModel planet;
+  final int index;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Card(
-        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-        child: InkWell(
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+        child: _CardShell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          child: Padding(
-            padding: EdgeInsets.all(16.r),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _PlanetHeader(planet: planet),
-                if (planet.films.isNotEmpty) ...[
-                  SizedBox(height: 10.h),
-                  _FilmChips(films: planet.films),
-                ],
-              ],
-            ),
+          child: Row(
+            children: [
+              GlowingPlanetOrb(
+                size: 52.r,
+                colors: AppColors.planetGradientAt(index),
+                heroTag: 'planet_orb_${planet.url}',
+              ),
+              SizedBox(width: 14.w),
+              Expanded(child: _PlanetInfo(planet: planet)),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textMuted,
+                size: 18.r,
+              ),
+            ],
           ),
         ),
       );
 }
 
-class _PlanetHeader extends StatelessWidget {
-  const _PlanetHeader({required this.planet});
-  final PlanetModel planet;
+class _CardShell extends StatelessWidget {
+  const _CardShell({required this.child, required this.onTap});
+  final Widget child;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          // Planet icon
-          Container(
-            width: 42.r,
-            height: 42.r,
+  Widget build(BuildContext context) => Material(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(16.r),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16.r),
+          splashColor: AppColors.goldGlow,
+          highlightColor: AppColors.goldGlow.withOpacity(0.5),
+          child: Container(
+            padding: EdgeInsets.all(14.r),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
+              borderRadius: BorderRadius.circular(16.r),
+              border:
+                  Border.all(color: AppColors.border, width: 0.5),
+              // Subtle top-left highlight
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.highlight.withOpacity(0.6),
-                  AppTheme.accent.withOpacity(0.9),
+                  AppColors.bgCardLight.withOpacity(0.6),
+                  AppColors.bgCard,
                 ],
               ),
             ),
-            child: Icon(Icons.public, size: 22.r, color: Colors.white),
+            child: child,
           ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  planet.name,
-                  style: context.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  'Climate: ${planet.climate}  ·  Terrain: ${planet.terrain}',
-                  style: context.textTheme.bodySmall
-                      ?.copyWith(color: Colors.grey),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+        ),
+      );
+}
+
+class _PlanetInfo extends StatelessWidget {
+  const _PlanetInfo({required this.planet});
+  final PlanetModel planet;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(planet.name, style: AppTextStyles.headingMedium),
+          SizedBox(height: 3.h),
+          Row(children: [
+            _MiniTag(
+              icon: Icons.thermostat_rounded,
+              label: planet.climate,
             ),
-          ),
-          Icon(Icons.chevron_right, color: AppTheme.highlight, size: 20.r),
+            SizedBox(width: 8.w),
+            _MiniTag(
+              icon: Icons.terrain_rounded,
+              label: planet.terrain,
+            ),
+          ]),
+          if (planet.films.isNotEmpty) ...[
+            SizedBox(height: 8.h),
+            _FilmChips(films: planet.films),
+          ],
         ],
       );
+}
+
+class _MiniTag extends StatelessWidget {
+  const _MiniTag({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        Icon(icon, size: 10.r, color: AppColors.textMuted),
+        SizedBox(width: 3.w),
+        Flexible(
+          child: Text(
+            label,
+            style: AppTextStyles.bodySmall,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+      ]);
 }
 
 class _FilmChips extends StatelessWidget {
@@ -92,24 +135,21 @@ class _FilmChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Wrap(
-        spacing: 6.w,
+        spacing: 5.w,
         runSpacing: 4.h,
         children: films
-            .map(
-              (title) => Chip(
-                padding: EdgeInsets.symmetric(horizontal: 4.w),
-                labelPadding: EdgeInsets.zero,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                label: Text(
-                  title,
-                  style: context.textTheme.labelSmall
-                      ?.copyWith(fontSize: 10.sp),
-                ),
-                backgroundColor: AppTheme.highlight.withOpacity(0.15),
-                side: BorderSide(
-                    color: AppTheme.highlight.withOpacity(0.4), width: 0.5),
-              ),
-            )
+            .map((t) => Container(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 8.w, vertical: 3.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.goldGlow,
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(
+                        color: AppColors.goldDim.withOpacity(0.5),
+                        width: 0.5),
+                  ),
+                  child: Text(t, style: AppTextStyles.chip),
+                ))
             .toList(),
       );
 }
