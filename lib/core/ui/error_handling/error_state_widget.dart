@@ -61,7 +61,6 @@ class ErrorStateWidget extends StatelessWidget {
     };
   }
 
-  // Null-safe — never crashes even if error is null
   _ErrConfig _emptyConfig() => _ErrConfig(
         icon: emptyIcon ?? Icons.public_off_outlined,
         color: AppColors.current.textSecondary,
@@ -69,9 +68,10 @@ class ErrorStateWidget extends StatelessWidget {
         message: emptyMessage ?? AppStrings.emptyPlanetsMsg,
       );
 
+  // No const here — AppColors.current is a runtime value
   _ErrConfig _errorConfig(BaseException? e) {
     if (e == null) {
-      return const _ErrConfig(
+      return _ErrConfig(
         icon: Icons.error_outline_rounded,
         color: AppColors.current.error,
         title: AppStrings.errorTitle,
@@ -79,12 +79,12 @@ class ErrorStateWidget extends StatelessWidget {
       );
     }
     return switch (e) {
-      TimeoutException() => const _ErrConfig(
+      TimeoutException() => _ErrConfig(
           icon: Icons.access_time_rounded,
           color: AppColors.current.warning,
           title: AppStrings.errorTitle,
           message: AppStrings.errorTimeout),
-      ConnectionException() || SocketServerException() => const _ErrConfig(
+      ConnectionException() || SocketServerException() => _ErrConfig(
           icon: Icons.wifi_off_rounded,
           color: AppColors.current.accent,
           title: AppStrings.errorTitle,

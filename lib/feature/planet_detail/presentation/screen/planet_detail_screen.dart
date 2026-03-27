@@ -45,7 +45,7 @@ class _PlanetDetailScreenState extends State<PlanetDetailScreen> {
               init: () => const SizedBox.shrink(),
               loading: () => _DetailLayout(
                 planet: widget.planet,
-                body: const Center(
+                body: Center(
                   child: CircularProgressIndicator(color: AppColors.current.primary),
                 ),
               ),
@@ -97,7 +97,7 @@ class _PlanetSliverAppBar extends StatelessWidget {
   List<Color> get _colors {
     final idx = planet.name.codeUnits
         .fold(0, (sum, c) => sum + c);
-    return AppColors.planetGradientAt(idx);
+    return AppColors.current.planetGradientAt(idx);
   }
 
   @override
@@ -105,7 +105,7 @@ class _PlanetSliverAppBar extends StatelessWidget {
         expandedHeight: 260.h,
         pinned: true,
         backgroundColor: AppColors.current.bg.withOpacity(0.92),
-        iconTheme: const IconThemeData(color: AppColors.current.textPrimary),
+        iconTheme: IconThemeData(color: AppColors.current.textPrimary),
         flexibleSpace: FlexibleSpaceBar(
           collapseMode: CollapseMode.parallax,
           titlePadding: EdgeInsets.only(left: 52.w, bottom: 14.h),

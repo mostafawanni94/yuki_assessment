@@ -48,7 +48,7 @@ class PlanetListItem extends StatelessWidget {
                 children: [
                   GlowingPlanetOrb(
                     size: 52.r,
-                    colors: AppColors.planetGradientAt(index),
+                    colors: AppColors.current.planetGradientAt(index),
                     heroTag: 'planet_orb_${planet.url}',
                   ),
                   SizedBox(width: 12.w),
