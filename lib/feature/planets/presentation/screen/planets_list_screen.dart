@@ -7,8 +7,10 @@ import 'package:swapi_planets/core/base_bloc/base_state.dart';
 import 'package:swapi_planets/core/l10n/app_strings.dart';
 import 'package:swapi_planets/core/theme/app_colors.dart';
 import 'package:swapi_planets/core/theme/app_text_styles.dart';
+import 'package:swapi_planets/core/theme/theme_cubit.dart';
 import 'package:swapi_planets/core/ui/error_handling/error_state_widget.dart';
 import 'package:swapi_planets/core/ui/widgets/star_field_background.dart';
+import 'package:swapi_planets/core/ui/widgets/theme_toggle_button.dart';
 import 'package:swapi_planets/feature/planet_detail/presentation/screen/planet_detail_screen.dart';
 import 'package:swapi_planets/feature/planets/domain/model/planet_model.dart';
 import 'package:swapi_planets/feature/planets/presentation/bloc/planets_bloc.dart';
@@ -43,7 +45,8 @@ class _PlanetsListScreenState extends State<PlanetsListScreen> {
 
   void _onScroll() {
     if (!_scroll.hasClients) return;
-    if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 200) {
+    if (_scroll.position.pixels >=
+        _scroll.position.maxScrollExtent - 200) {
       _bloc.loadMore();
     }
   }
@@ -51,60 +54,60 @@ class _PlanetsListScreenState extends State<PlanetsListScreen> {
   @override
   Widget build(BuildContext context) => BlocProvider.value(
         value: _bloc,
-        child: Scaffold(
-          backgroundColor: AppColors.bg,
-          appBar: _buildAppBar(),
-          body: Stack(children: [
-            const Positioned.fill(child: StarFieldBackground()),
-            BlocBuilder<PlanetsBloc, BaseState<List<PlanetModel>>>(
-              builder: (_, state) => state.when(
-                init: () => const SizedBox.shrink(),
-                loading: _buildLoading,
-                success: (planets) => _buildSuccess(planets ?? []),
-                failure: (error, retry) => _buildFailure(error, retry),
+        child: BlocBuilder<ThemeCubit, AppColorScheme>(
+          bloc: GetIt.I<ThemeCubit>(),
+          builder: (_, scheme) => Scaffold(
+            backgroundColor: scheme.bg,
+            appBar: _buildAppBar(scheme),
+            body: Stack(children: [
+              const Positioned.fill(child: StarFieldBackground()),
+              BlocBuilder<PlanetsBloc, BaseState<List<PlanetModel>>>(
+                builder: (_, state) => state.when(
+                  init: () => const SizedBox.shrink(),
+                  loading: _buildLoading,
+                  success: (planets) => _buildSuccess(planets ?? []),
+                  failure: (error, retry) => _buildFailure(error, retry),
+                ),
               ),
-            ),
-          ]),
+            ]),
+          ),
         ),
       );
 
-  // ─── AppBar (always visible) ──────────────────────────────────────────────
-
-  PreferredSizeWidget _buildAppBar() => AppBar(
-        backgroundColor: AppColors.bg,
+  PreferredSizeWidget _buildAppBar(AppColorScheme scheme) => AppBar(
+        backgroundColor: scheme.bg,
         elevation: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(AppStrings.planetsTitle,
-                style: AppTextStyles.displayMedium
-                    .copyWith(color: AppColors.gold)),
+                style: AppTextStyles.displayMedium(scheme)
+                    .copyWith(color: scheme.primary)),
             Text(AppStrings.planetsSubtitle,
-                style: AppTextStyles.bodySmall),
+                style: AppTextStyles.bodySmall(scheme)),
           ],
         ),
         actions: [
+          // Theme toggle — cycles Space → Light → Sith → Space
+          BlocProvider.value(
+            value: GetIt.I<ThemeCubit>(),
+            child: const ThemeToggleButton(),
+          ),
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+            icon: Icon(Icons.refresh_rounded,
+                color: scheme.textSecondary, size: 20.r),
             tooltip: AppStrings.refresh,
             onPressed: _bloc.loadPlanets,
           ),
         ],
       );
 
-  // ─── State builders ───────────────────────────────────────────────────────
-
   Widget _buildLoading() {
     final cached = _bloc.cachedPlanets;
-    if (cached.isEmpty) {
-      return const PlanetsLoadingShimmer();
-    }
+    if (cached.isEmpty) return const PlanetsLoadingShimmer();
     return _PlanetsList(
-      planets: cached,
-      scroll: _scroll,
-      isLoadingMore: true,
-      onTap: _navigateToDetail,
-    );
+        planets: cached, scroll: _scroll,
+        isLoadingMore: true, onTap: _navigateToDetail);
   }
 
   Widget _buildSuccess(List<PlanetModel> planets) {
@@ -118,14 +121,11 @@ class _PlanetsListScreenState extends State<PlanetsListScreen> {
     }
     return RefreshIndicator(
       onRefresh: _bloc.loadPlanets,
-      color: AppColors.gold,
-      backgroundColor: AppColors.bgCard,
+      color: AppColors.current.primary,
+      backgroundColor: AppColors.current.bgCard,
       child: _PlanetsList(
-        planets: planets,
-        scroll: _scroll,
-        isLoadingMore: false,
-        onTap: _navigateToDetail,
-      ),
+          planets: planets, scroll: _scroll,
+          isLoadingMore: false, onTap: _navigateToDetail),
     );
   }
 
@@ -135,8 +135,6 @@ class _PlanetsListScreenState extends State<PlanetsListScreen> {
   void _navigateToDetail(PlanetModel planet) =>
       context.push(PlanetDetailScreen.route, extra: planet);
 }
-
-// ─── Planet list ──────────────────────────────────────────────────────────────
 
 class _PlanetsList extends StatelessWidget {
   const _PlanetsList({
@@ -177,7 +175,8 @@ class _LoadMoreSpinner extends StatelessWidget {
           child: SizedBox(
             width: 20.r, height: 20.r,
             child: CircularProgressIndicator(
-                strokeWidth: 1.5, color: AppColors.gold),
+                strokeWidth: 1.5,
+                color: AppColors.current.primary),
           ),
         ),
       );

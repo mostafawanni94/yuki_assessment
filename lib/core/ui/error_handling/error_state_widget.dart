@@ -64,7 +64,7 @@ class ErrorStateWidget extends StatelessWidget {
   // Null-safe — never crashes even if error is null
   _ErrConfig _emptyConfig() => _ErrConfig(
         icon: emptyIcon ?? Icons.public_off_outlined,
-        color: AppColors.textSecondary,
+        color: AppColors.current.textSecondary,
         title: emptyTitle ?? AppStrings.emptyPlanets,
         message: emptyMessage ?? AppStrings.emptyPlanetsMsg,
       );
@@ -73,7 +73,7 @@ class ErrorStateWidget extends StatelessWidget {
     if (e == null) {
       return const _ErrConfig(
         icon: Icons.error_outline_rounded,
-        color: AppColors.saberRed,
+        color: AppColors.current.error,
         title: AppStrings.errorTitle,
         message: AppStrings.errorUnknown,
       );
@@ -81,17 +81,17 @@ class ErrorStateWidget extends StatelessWidget {
     return switch (e) {
       TimeoutException() => const _ErrConfig(
           icon: Icons.access_time_rounded,
-          color: AppColors.warning,
+          color: AppColors.current.warning,
           title: AppStrings.errorTitle,
           message: AppStrings.errorTimeout),
       ConnectionException() || SocketServerException() => const _ErrConfig(
           icon: Icons.wifi_off_rounded,
-          color: AppColors.saberBlue,
+          color: AppColors.current.accent,
           title: AppStrings.errorTitle,
           message: AppStrings.errorNoConnection),
       _ => _ErrConfig(
           icon: Icons.error_outline_rounded,
-          color: AppColors.saberRed,
+          color: AppColors.current.error,
           title: AppStrings.errorTitle,
           message: e.toString()),
     };
@@ -136,12 +136,12 @@ class _FullError extends StatelessWidget {
             ),
             SizedBox(height: 24.h),
             Text(cfg.title,
-                style: AppTextStyles.headingLarge,
+                style: AppTextStyles.headingLargeCurrent,
                 textAlign: TextAlign.center),
             SizedBox(height: 8.h),
             Text(customMessage ?? cfg.message,
-                style: AppTextStyles.bodyMedium
-                    .copyWith(color: AppColors.textSecondary),
+                style: AppTextStyles.bodyMediumCurrent
+                    .copyWith(color: AppColors.current.textSecondary),
                 textAlign: TextAlign.center, maxLines: 3),
             if (showRetry && onRetry != null) ...[
               SizedBox(height: 32.h),
@@ -176,7 +176,7 @@ class _CompactError extends StatelessWidget {
           Icon(cfg.icon, color: cfg.color, size: 20.r),
           SizedBox(width: 12.w),
           Expanded(child: Text(customMessage ?? cfg.message,
-              style: AppTextStyles.bodySmall.copyWith(color: cfg.color),
+              style: AppTextStyles.bodySmallCurrent.copyWith(color: cfg.color),
               maxLines: 2)),
           if (showRetry && onRetry != null)
             IconButton(
@@ -201,7 +201,7 @@ class _InlineError extends StatelessWidget {
         Icon(cfg.icon, size: 14.r, color: cfg.color),
         SizedBox(width: 6.w),
         Expanded(child: Text(customMessage ?? cfg.message,
-            style: AppTextStyles.bodySmall.copyWith(color: cfg.color),
+            style: AppTextStyles.bodySmallCurrent.copyWith(color: cfg.color),
             maxLines: 1, overflow: TextOverflow.ellipsis)),
         if (showRetry && onRetry != null)
           GestureDetector(

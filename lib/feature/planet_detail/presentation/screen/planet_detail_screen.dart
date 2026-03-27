@@ -39,14 +39,14 @@ class _PlanetDetailScreenState extends State<PlanetDetailScreen> {
   Widget build(BuildContext context) => BlocProvider.value(
         value: _bloc,
         child: Scaffold(
-          backgroundColor: AppColors.bg,
+          backgroundColor: AppColors.current.bg,
           body: BlocBuilder<PlanetDetailBloc, BaseState<PlanetModel>>(
             builder: (_, state) => state.when(
               init: () => const SizedBox.shrink(),
               loading: () => _DetailLayout(
                 planet: widget.planet,
                 body: const Center(
-                  child: CircularProgressIndicator(color: AppColors.gold),
+                  child: CircularProgressIndicator(color: AppColors.current.primary),
                 ),
               ),
               success: (p) => _DetailLayout(
@@ -104,13 +104,13 @@ class _PlanetSliverAppBar extends StatelessWidget {
   Widget build(BuildContext context) => SliverAppBar(
         expandedHeight: 260.h,
         pinned: true,
-        backgroundColor: AppColors.bg.withOpacity(0.92),
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        backgroundColor: AppColors.current.bg.withOpacity(0.92),
+        iconTheme: const IconThemeData(color: AppColors.current.textPrimary),
         flexibleSpace: FlexibleSpaceBar(
           collapseMode: CollapseMode.parallax,
           titlePadding: EdgeInsets.only(left: 52.w, bottom: 14.h),
           title: Text(planet.name,
-              style: AppTextStyles.headingMedium.copyWith(
+              style: AppTextStyles.headingMediumCurrent.copyWith(
                 shadows: [
                   Shadow(
                       color: Colors.black.withOpacity(0.6),
@@ -135,9 +135,9 @@ class _AppBarBackground extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              AppColors.bg,
+              AppColors.current.bg,
               colors.last.withOpacity(0.15),
-              AppColors.bg,
+              AppColors.current.bg,
             ],
             stops: const [0.0, 0.5, 1.0],
           ),
@@ -180,17 +180,17 @@ class _PopulationBadge extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
         decoration: BoxDecoration(
-          color: AppColors.goldGlow,
+          color: AppColors.current.primaryGlow,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
-              color: AppColors.goldDim.withOpacity(0.5), width: 0.5),
+              color: AppColors.current.primaryDim.withOpacity(0.5), width: 0.5),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(Icons.people_rounded,
-              size: 12.r, color: AppColors.gold),
+              size: 12.r, color: AppColors.current.primary),
           SizedBox(width: 4.w),
           Text('$_formatted inhabitants',
-              style: AppTextStyles.chip),
+              style: AppTextStyles.chipCurrent),
         ]),
       );
 }
@@ -237,7 +237,7 @@ class _DetailBody extends StatelessWidget {
               icon: Icons.movie_creation_rounded,
               items: planet.films,
               itemIcon: Icons.star_rounded,
-              itemIconColor: AppColors.gold,
+              itemIconColor: AppColors.current.primary,
             ),
           if (planet.residents.isNotEmpty)
             _ListSection(
@@ -245,7 +245,7 @@ class _DetailBody extends StatelessWidget {
               icon: Icons.people_alt_rounded,
               items: planet.residents,
               itemIcon: Icons.person_rounded,
-              itemIconColor: AppColors.saberBlue,
+              itemIconColor: AppColors.current.accent,
             ),
         ],
       );
@@ -274,9 +274,9 @@ class _SectionCard extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.bgCard,
+            color: AppColors.current.bgCard,
             borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(color: AppColors.border, width: 0.5),
+            border: Border.all(color: AppColors.current.border, width: 0.5),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,7 +285,7 @@ class _SectionCard extends StatelessWidget {
               Divider(
                   height: 0,
                   thickness: 0.5,
-                  color: AppColors.divider),
+                  color: AppColors.current.divider),
               ...rows.map((r) => _InfoRow(label: r.label, value: r.value)),
             ],
           ),
@@ -306,13 +306,13 @@ class _SectionHeader extends StatelessWidget {
             width: 28.r,
             height: 28.r,
             decoration: BoxDecoration(
-              color: AppColors.goldGlow,
+              color: AppColors.current.primaryGlow,
               borderRadius: BorderRadius.circular(8.r),
             ),
-            child: Icon(icon, size: 15.r, color: AppColors.gold),
+            child: Icon(icon, size: 15.r, color: AppColors.current.primary),
           ),
           SizedBox(width: 10.w),
-          Text(title, style: AppTextStyles.headingSmall),
+          Text(title, style: AppTextStyles.headingSmallCurrent),
         ]),
       );
 }
@@ -332,11 +332,11 @@ class _InfoRow extends StatelessWidget {
             SizedBox(
               width: 110.w,
               child: Text(label,
-                  style: AppTextStyles.labelLarge.copyWith(
-                      color: AppColors.textSecondary)),
+                  style: AppTextStyles.labelLargeCurrent.copyWith(
+                      color: AppColors.current.textSecondary)),
             ),
             Expanded(
-              child: Text(value, style: AppTextStyles.bodyMedium),
+              child: Text(value, style: AppTextStyles.bodyMediumCurrent),
             ),
           ],
         ),
@@ -364,9 +364,9 @@ class _ListSection extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.bgCard,
+            color: AppColors.current.bgCard,
             borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(color: AppColors.border, width: 0.5),
+            border: Border.all(color: AppColors.current.border, width: 0.5),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,7 +375,7 @@ class _ListSection extends StatelessWidget {
               Divider(
                   height: 0,
                   thickness: 0.5,
-                  color: AppColors.divider),
+                  color: AppColors.current.divider),
               SizedBox(height: 6.h),
               ...items.map((item) => _ListItemRow(
                     text: item,
@@ -415,7 +415,7 @@ class _ListItemRow extends StatelessWidget {
           ),
           SizedBox(width: 12.w),
           Expanded(
-              child: Text(text, style: AppTextStyles.bodyMedium)),
+              child: Text(text, style: AppTextStyles.bodyMediumCurrent)),
         ]),
       );
 }

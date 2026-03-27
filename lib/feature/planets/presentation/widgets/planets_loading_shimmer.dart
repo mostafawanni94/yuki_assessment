@@ -54,17 +54,17 @@ class _ShimmerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // High-contrast shimmer: gold tint on bgCardLight
     final shimmer = Color.lerp(
-      AppColors.bgCardLight,
-      AppColors.goldDim.withOpacity(0.3),
+      AppColors.current.bgCardLight,
+      AppColors.current.primaryDim.withOpacity(0.3),
       t,
     )!;
 
     return Container(
       padding: EdgeInsets.all(14.r),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: AppColors.current.bgCard,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: AppColors.current.border, width: 0.5),
       ),
       child: Row(children: [
         // Circle placeholder
