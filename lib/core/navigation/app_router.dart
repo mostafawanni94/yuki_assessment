@@ -4,12 +4,10 @@ import 'package:swapi_planets/feature/planet_detail/presentation/screen/planet_d
 import 'package:swapi_planets/feature/planets/domain/entity/planet.dart';
 import 'package:swapi_planets/feature/planets/presentation/screen/planets_list_screen.dart';
 
-final GlobalKey<NavigatorState> rootNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'root');
+/// Navigation extra: planet + its list index (for consistent color).
+typedef PlanetExtra = ({Planet planet, int index});
 
-/// All app routes — one entry per feature branch.
 final GoRouter appRouter = GoRouter(
-  navigatorKey: rootNavigatorKey,
   initialLocation: PlanetsListScreen.route,
   routes: [
     GoRoute(
@@ -18,11 +16,16 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: PlanetDetailScreen.route,
-      builder: (context, state) {
-        // Planet passed via extra — type-safe, no serialisation needed
-        final planet = state.extra as Planet;
-        return PlanetDetailScreen(planet: planet);
+      builder: (_, state) {
+        final extra = state.extra as PlanetExtra;
+        return PlanetDetailScreen(
+          planet: extra.planet,
+          colorIndex: extra.index,
+        );
       },
     ),
   ],
+  errorBuilder: (_, state) => Scaffold(
+    body: Center(child: Text('Route not found: ${state.error}')),
+  ),
 );

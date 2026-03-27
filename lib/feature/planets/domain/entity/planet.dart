@@ -38,17 +38,6 @@ class Planet {
   final String created;
   final String edited;
 
-  /// Deterministic color index from the SWAPI URL.
-  /// "https://swapi.dev/api/planets/1/" → 0 (gold)
-  /// "https://swapi.dev/api/planets/4/" → 3 (red)
-  /// Guarantees the same planet always renders the same color
-  /// on both the list screen and the detail screen.
-  int get colorIndex {
-    final match = RegExp(r'/planets/(\d+)/').firstMatch(url);
-    final n = int.tryParse(match?.group(1) ?? '0') ?? 0;
-    return n > 0 ? n - 1 : 0; // SWAPI is 1-based → 0-based
-  }
-
   Planet copyWith({
     String? name,
     String? rotationPeriod,

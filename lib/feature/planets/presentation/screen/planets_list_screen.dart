@@ -12,6 +12,7 @@ import 'package:swapi_planets/core/ui/error_handling/error_state_widget.dart';
 import 'package:swapi_planets/core/ui/widgets/connectivity_banner.dart';
 import 'package:swapi_planets/core/ui/widgets/star_field_background.dart';
 import 'package:swapi_planets/core/ui/widgets/theme_toggle_button.dart';
+import 'package:swapi_planets/core/navigation/app_router.dart';
 import 'package:swapi_planets/feature/planet_detail/presentation/screen/planet_detail_screen.dart';
 import 'package:swapi_planets/feature/planets/domain/entity/planet.dart';
 import 'package:swapi_planets/feature/planets/presentation/bloc/planets_bloc.dart';
@@ -140,8 +141,8 @@ class _PlanetsListScreenState extends State<PlanetsListScreen> {
     );
   }
 
-  void _navigateToDetail(Planet planet) =>
-      context.push(PlanetDetailScreen.route, extra: planet);
+  void _navigateToDetail(Planet planet, int index) =>
+      context.push(PlanetDetailScreen.route, extra: (planet: planet, index: index));
 }
 
 // ─── List — portrait + landscape ─────────────────────────────────────────────
@@ -154,7 +155,7 @@ class _PlanetsList extends StatelessWidget {
   final List<Planet> planets;
   final ScrollController scroll;
   final bool isLoadingMore;
-  final void Function(Planet) onTap;
+  final void Function(Planet, int) onTap;
 
   @override
   Widget build(BuildContext context) => OrientationBuilder(
@@ -177,7 +178,7 @@ class _PortraitList extends StatelessWidget {
   final List<Planet> planets;
   final ScrollController scroll;
   final bool isLoadingMore;
-  final void Function(Planet) onTap;
+  final void Function(Planet, int) onTap;
 
   @override
   Widget build(BuildContext context) => ListView.builder(
@@ -188,7 +189,7 @@ class _PortraitList extends StatelessWidget {
         itemBuilder: (_, i) {
           if (i == planets.length) return const _LoadMoreSpinner();
           return PlanetListItem(
-              planet: planets[i], index: i, onTap: () => onTap(planets[i]));
+              planet: planets[i], index: i, onTap: () => onTap(planets[i], i));
         },
       );
 }
@@ -201,7 +202,7 @@ class _LandscapeGrid extends StatelessWidget {
   final List<Planet> planets;
   final ScrollController scroll;
   final bool isLoadingMore;
-  final void Function(Planet) onTap;
+  final void Function(Planet, int) onTap;
 
   @override
   Widget build(BuildContext context) => GridView.builder(
@@ -218,7 +219,7 @@ class _LandscapeGrid extends StatelessWidget {
         itemBuilder: (_, i) {
           if (i == planets.length) return const _LoadMoreSpinner();
           return PlanetListItem(
-              planet: planets[i], index: i, onTap: () => onTap(planets[i]));
+              planet: planets[i], index: i, onTap: () => onTap(planets[i], i));
         },
       );
 }
