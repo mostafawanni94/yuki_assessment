@@ -3,27 +3,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swapi_planets/core/errors/timeout_exception.dart';
 import 'package:swapi_planets/core/result/result.dart';
 import 'package:swapi_planets/feature/planets/data/datasource/i_planets_datasource.dart';
-import 'package:swapi_planets/feature/planets/domain/model/planet_model.dart';
-import 'package:swapi_planets/feature/planets/domain/model/planets_page_model.dart';
-import 'package:swapi_planets/feature/planets/domain/repository/planets_repository.dart';
+import 'package:swapi_planets/feature/planets/data/model/planets_page_dto.dart';
+import 'package:swapi_planets/feature/planets/data/repository/planets_repository.dart';
+import 'package:swapi_planets/feature/planets/domain/entity/planet.dart';
 
 import '../../../core/test_helpers.dart';
 
-// ─── Fake datasource ──────────────────────────────────────────────────────────
-
 class _FakeDatasource extends Fake implements IPlanetsDatasource {
-  // Configurable responses
-  MyResult<PlanetsPageModel> planetsResult =
-      ok(fakePage(planets: [fakePlanet()]));
-  MyResult<String> filmResult = ok('A New Hope');
+  MyResult<PlanetsPageDto> planetsResult =
+      ok(fakePage(dtos: [fakePlanetDto()]));
+  MyResult<String> filmResult     = ok('A New Hope');
   MyResult<String> residentResult = ok('Luke Skywalker');
 
-  int getPlanetsCalls = 0;
-  int getFilmCalls = 0;
-  int getResidentCalls = 0;
+  int getPlanetsCalls   = 0;
+  int getFilmCalls      = 0;
+  int getResidentCalls  = 0;
 
   @override
-  Future<MyResult<PlanetsPageModel>> getPlanets({
+  Future<MyResult<PlanetsPageDto>> getPlanets({
     required int page,
     required CancelToken cancelToken,
   }) async {
@@ -50,8 +47,6 @@ class _FakeDatasource extends Fake implements IPlanetsDatasource {
   }
 }
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
-
 void main() {
   late _FakeDatasource fakeDatasource;
   late PlanetsRepository repository;
@@ -61,147 +56,112 @@ void main() {
     repository = PlanetsRepository(fakeDatasource);
   });
 
-  // ─── getPlanets ───────────────────────────────────────────────────────────
-
   group('getPlanets', () {
-    test('returns planet list on success', () async {
+    test('returns List<Planet> on success', () async {
       final result = await repository.getPlanets(
-        page: 1,
-        cancelToken: freshToken(),
-      );
+          page: 1, cancelToken: freshToken());
 
-      expect(result, isA<IsSuccess<List<PlanetModel>>>());
+      expect(result, isA<IsSuccess<List<Planet>>>());
     });
 
-    test('resolves film URLs to titles', () async {
-      fakeDatasource.planetsResult = ok(fakePage(planets: [
-        fakePlanet(films: ['https://swapi.dev/api/films/1/']),
-      ]));
+    test('maps DTO to Planet entity via PlanetMapper', () async {
+      fakeDatasource.planetsResult =
+          ok(fakePage(dtos: [fakePlanetDto(name: 'Tatooine')]));
       fakeDatasource.filmResult = ok('A New Hope');
 
       final result = await repository.getPlanets(
-        page: 1,
-        cancelToken: freshToken(),
-      );
+          page: 1, cancelToken: freshToken());
 
-      final planets = (result as IsSuccess<List<PlanetModel>>).model!;
+      final planets = (result as IsSuccess<List<Planet>>).model!;
+      expect(planets.first.name, equals('Tatooine'));
+      // Film URL should be replaced with resolved title
       expect(planets.first.films, equals(['A New Hope']));
     });
 
-    test('deduplicates film URLs across planets — calls datasource once per unique URL', () async {
-      // Two planets sharing the same film URL
+    test('deduplicates film URLs across planets — one fetch per unique URL', () async {
       final sharedFilmUrl = 'https://swapi.dev/api/films/1/';
-      fakeDatasource.planetsResult = ok(fakePage(planets: [
-        fakePlanet(name: 'Tatooine', films: [sharedFilmUrl]),
-        fakePlanet(name: 'Alderaan', films: [sharedFilmUrl]),
+      fakeDatasource.planetsResult = ok(fakePage(dtos: [
+        fakePlanetDto(name: 'Tatooine', filmUrls: [sharedFilmUrl]),
+        fakePlanetDto(name: 'Alderaan',
+            url: 'https://swapi.dev/api/planets/2/',
+            filmUrls: [sharedFilmUrl]),
       ]));
 
       await repository.getPlanets(page: 1, cancelToken: freshToken());
 
-      // Should only fetch the film once despite two planets referencing it
       expect(fakeDatasource.getFilmCalls, equals(1));
     });
 
-    test('keeps planet in list even when film fetch fails', () async {
-      fakeDatasource.planetsResult = ok(fakePage(planets: [fakePlanet()]));
+    test('keeps planet when film fetch fails (graceful degradation)', () async {
       fakeDatasource.filmResult =
-          IsError(TimeoutException());
+          IsError(const TimeoutException());
 
       final result = await repository.getPlanets(
-        page: 1,
-        cancelToken: freshToken(),
-      );
+          page: 1, cancelToken: freshToken());
 
-      // Planet list still returned — degraded gracefully
-      expect(result, isA<IsSuccess<List<PlanetModel>>>());
-      final planets = (result as IsSuccess<List<PlanetModel>>).model!;
+      expect(result, isA<IsSuccess<List<Planet>>>());
+      final planets = (result as IsSuccess<List<Planet>>).model!;
       expect(planets.length, equals(1));
-      // Film list is empty (failed fetch filtered out)
       expect(planets.first.films, isEmpty);
     });
 
-    test('returns error when getPlanets datasource call fails', () async {
+    test('returns IsError when datasource fails', () async {
       fakeDatasource.planetsResult =
-          IsError(TimeoutException());
+          IsError(const TimeoutException());
 
       final result = await repository.getPlanets(
-        page: 1,
-        cancelToken: freshToken(),
-      );
+          page: 1, cancelToken: freshToken());
 
-      expect(result, isA<IsError<List<PlanetModel>>>());
+      expect(result, isA<IsError<List<Planet>>>());
     });
   });
 
-  // ─── getPlanetDetail ──────────────────────────────────────────────────────
-
   group('getPlanetDetail', () {
-    test('resolves both films and residents concurrently', () async {
+    test('resolves films + residents concurrently', () async {
       final planet = fakePlanet(
         films: ['https://swapi.dev/api/films/1/'],
         residents: ['https://swapi.dev/api/people/1/'],
       );
-      fakeDatasource.filmResult = ok('A New Hope');
+      fakeDatasource.filmResult     = ok('A New Hope');
       fakeDatasource.residentResult = ok('Luke Skywalker');
 
       final result = await repository.getPlanetDetail(
-        planet: planet,
-        cancelToken: freshToken(),
-      );
+          planet: planet, cancelToken: freshToken());
 
-      final detail = (result as IsSuccess<PlanetModel>).model!;
+      final detail = (result as IsSuccess<Planet>).model!;
       expect(detail.films, equals(['A New Hope']));
       expect(detail.residents, equals(['Luke Skywalker']));
     });
 
-    test('planet with no residents returns empty residents list', () async {
+    test('empty residents — no resident calls made', () async {
       final planet = fakePlanet(residents: []);
 
-      final result = await repository.getPlanetDetail(
-        planet: planet,
-        cancelToken: freshToken(),
-      );
+      await repository.getPlanetDetail(
+          planet: planet, cancelToken: freshToken());
 
-      final detail = (result as IsSuccess<PlanetModel>).model!;
-      expect(detail.residents, isEmpty);
-      // No resident calls made
       expect(fakeDatasource.getResidentCalls, equals(0));
     });
 
-    test('failed resident fetch is filtered — others still returned', () async {
-      final planet = fakePlanet(
-        residents: [
-          'https://swapi.dev/api/people/1/',
-          'https://swapi.dev/api/people/2/',
-        ],
-      );
-      // All resident fetches fail
+    test('failed resident fetch filtered — IsSuccess still returned', () async {
       fakeDatasource.residentResult =
-          IsError(TimeoutException());
+          IsError(const TimeoutException());
 
       final result = await repository.getPlanetDetail(
-        planet: planet,
-        cancelToken: freshToken(),
-      );
+          planet: fakePlanet(), cancelToken: freshToken());
 
-      // Detail still returned — residents list is just empty
-      expect(result, isA<IsSuccess<PlanetModel>>());
-      final detail = (result as IsSuccess<PlanetModel>).model!;
+      expect(result, isA<IsSuccess<Planet>>());
+      final detail = (result as IsSuccess<Planet>).model!;
       expect(detail.residents, isEmpty);
     });
 
-    test('returns success even when both films and residents fail', () async {
-      fakeDatasource.filmResult =
-          IsError(TimeoutException());
-      fakeDatasource.residentResult =
-          IsError(TimeoutException());
+    test('all fetches fail — IsSuccess with empty lists', () async {
+      fakeDatasource.filmResult     = IsError(const TimeoutException());
+      fakeDatasource.residentResult = IsError(const TimeoutException());
 
       final result = await repository.getPlanetDetail(
-        planet: fakePlanet(),
-        cancelToken: freshToken(),
-      );
+          planet: fakePlanet(), cancelToken: freshToken());
 
-      expect(result, isA<IsSuccess<PlanetModel>>());
+      expect(result, isA<IsSuccess<Planet>>());
     });
   });
 }

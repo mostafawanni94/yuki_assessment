@@ -5,25 +5,23 @@ import 'package:swapi_planets/core/net/api_service.dart';
 import 'package:swapi_planets/core/net/http_method.dart';
 import 'package:swapi_planets/core/result/result.dart';
 import 'package:swapi_planets/feature/planets/data/datasource/planets_datasource.dart';
-import 'package:swapi_planets/feature/planets/domain/model/planets_page_model.dart';
+import 'package:swapi_planets/feature/planets/data/model/planets_page_dto.dart';
 
 import '../../../core/test_helpers.dart';
 
-// ─── Fakes ───────────────────────────────────────────────────────────────────
+// ─── Fake ApiClient ───────────────────────────────────────────────────────────
 
-/// Fake ApiClient — records the last call params for assertion.
 class _FakeApiClient extends Fake implements ApiClient {
   String? lastUrl;
   HttpMethod? lastMethod;
   dynamic lastQueryParams;
-
   MyResult<dynamic> _response = ok('default');
 
   void respondWith<T>(MyResult<T> result) => _response = result;
 
   @override
   Future<MyResult<T>> request<T>({
-    required T Function(dynamic p1) converter,
+    required T Function(dynamic) converter,
     required HttpMethod method,
     required String url,
     required CancelToken cancelToken,
@@ -49,11 +47,10 @@ void main() {
     datasource = PlanetsDatasource(client: fakeClient);
   });
 
-  // ─── getPlanets ───────────────────────────────────────────────────────────
-
   group('getPlanets', () {
     test('calls planets/ with correct page query param', () async {
-      fakeClient.respondWith(ok(fakePage(planets: [fakePlanet()])));
+      fakeClient.respondWith(
+          ok(fakePage(dtos: [fakePlanetDto()])));
 
       await datasource.getPlanets(page: 2, cancelToken: freshToken());
 
@@ -62,35 +59,29 @@ void main() {
       expect(fakeClient.lastQueryParams, equals({'page': 2}));
     });
 
-    test('returns success with page model', () async {
-      final page = fakePage(planets: [fakePlanet()]);
-      fakeClient.respondWith<PlanetsPageModel>(ok(page));
+    test('returns IsSuccess with PlanetsPageDto', () async {
+      fakeClient.respondWith(
+          ok(fakePage(dtos: [fakePlanetDto()])));
 
       final result = await datasource.getPlanets(
-        page: 1,
-        cancelToken: freshToken(),
-      );
+          page: 1, cancelToken: freshToken());
 
-      expect(result, isA<IsSuccess<PlanetsPageModel>>());
+      expect(result, isA<IsSuccess<PlanetsPageDto>>());
     });
 
     test('propagates error from ApiClient', () async {
-      fakeClient.respondWith<PlanetsPageModel>(
-          IsError(TimeoutException()));
+      fakeClient.respondWith<PlanetsPageDto>(
+          IsError(const TimeoutException()));
 
       final result = await datasource.getPlanets(
-        page: 1,
-        cancelToken: freshToken(),
-      );
+          page: 1, cancelToken: freshToken());
 
-      expect(result, isA<IsError<PlanetsPageModel>>());
+      expect(result, isA<IsError<PlanetsPageDto>>());
     });
   });
 
-  // ─── getFilmTitle ─────────────────────────────────────────────────────────
-
   group('getFilmTitle', () {
-    test('strips https://swapi.dev/api/ prefix before calling ApiClient', () async {
+    test('strips base URL before passing to ApiClient', () async {
       fakeClient.respondWith(ok('A New Hope'));
 
       await datasource.getFilmTitle(
@@ -98,7 +89,6 @@ void main() {
         cancelToken: freshToken(),
       );
 
-      // Must NOT include the base URL — Dio would double-prefix it
       expect(fakeClient.lastUrl, equals('films/1/'));
       expect(fakeClient.lastUrl, isNot(contains('swapi.dev')));
     });
@@ -125,8 +115,6 @@ void main() {
       expect(result, isA<IsError<String>>());
     });
   });
-
-  // ─── getResidentName ──────────────────────────────────────────────────────
 
   group('getResidentName', () {
     test('strips base URL and uses people/ path', () async {
