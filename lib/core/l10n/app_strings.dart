@@ -22,7 +22,7 @@ abstract final class AppStrings {
   static const String sectionOrbital      = 'ORBITAL DATA';
   static const String sectionEnvironment  = 'ENVIRONMENT';
   static const String sectionFilms        = 'APPEARS IN';
-  static const String sectionResidents    = 'KNOWN RESIDENTS';
+  static const String sectionResidents    = 'KNOWN CHARACTERS';
 
   static const String fieldDiameter       = 'Diameter';
   static const String fieldRotation       = 'Rotation';
@@ -41,7 +41,7 @@ abstract final class AppStrings {
   // ─── Empty / error states ─────────────────────────────────────────────────
   static const String emptyPlanets        = 'No planets found';
   static const String emptyPlanetsMsg     = 'The galaxy seems empty right now.';
-  static const String emptyResidents      = 'No known residents';
+  static const String emptyResidents      = 'No known characters';
   static const String emptyFilms          = 'No film appearances';
 
   static const String errorTitle          = 'Something went wrong';
