@@ -3,6 +3,7 @@ import 'package:swapi_planets/core/errors/unknown_exception.dart';
 import 'package:swapi_planets/core/result/result.dart';
 import 'package:swapi_planets/feature/planets/data/datasource/i_planets_datasource.dart';
 import 'package:swapi_planets/feature/planets/domain/model/planet_model.dart';
+import 'package:swapi_planets/feature/planets/domain/model/planets_page_model.dart';
 import 'i_planets_repository.dart';
 
 /// Orchestrates fetching and URL→string resolution.
