@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:swapi_planets/core/base_bloc/base_state.dart';
+import 'package:swapi_planets/core/errors/not_found_exception.dart';
 import 'package:swapi_planets/core/errors/unknown_exception.dart';
 import 'package:swapi_planets/core/result/result.dart';
 import 'package:swapi_planets/feature/planets/domain/model/planet_model.dart';
@@ -47,6 +49,8 @@ class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
 
   Future<void> _fetchPage() async {
     if (isClosed) return;
+    final isFirstPage = _currentPage == 1;
+
     try {
       emit(const Loading());
 
@@ -60,14 +64,22 @@ class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
       if (result is IsSuccess<List<PlanetModel>>) {
         final incoming = result.model ?? [];
         _planets.addAll(incoming);
+        // SWAPI returns 10/page; fewer = last page
         _hasMore = incoming.length == 10;
         if (_hasMore) _currentPage++;
         emit(Success(List.unmodifiable(_planets)));
       } else if (result is IsError<List<PlanetModel>>) {
-        emit(Failure(result.error, retry));
+        // 404 on a subsequent page = we've reached the end of SWAPI data
+        // Show the planets we already have instead of an error screen
+        if (result.error is NotFoundException && !isFirstPage) {
+          _hasMore = false;
+          debugPrint('[PlanetsBloc] Page $_currentPage not found — end of data');
+          emit(Success(List.unmodifiable(_planets)));
+        } else {
+          emit(Failure(result.error, retry));
+        }
       }
     } catch (e, stack) {
-      // Catch ANY unhandled exception — show error state instead of silent crash
       debugPrint('[PlanetsBloc] _fetchPage error: $e\n$stack');
       if (!isClosed) emit(Failure(const UnknownException(), retry));
     }
