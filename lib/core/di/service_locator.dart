@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:swapi_planets/core/connectivity/connectivity_cubit.dart';
 import 'package:swapi_planets/core/net/api_service.dart';
 import 'package:swapi_planets/core/net/dio_client.dart';
 import 'package:swapi_planets/core/net/dio_config.dart';
@@ -19,19 +20,13 @@ abstract final class InjectionContainer {
     _initFeatures();
   }
 
-  // ─── External (async setup) ───────────────────────────────────────────────
-
   static Future<void> _initExternal() async {
-    // SharedPreferences must be awaited before registering
     final prefs = await SharedPreferences.getInstance();
     sl.registerSingleton<SharedPreferences>(prefs);
   }
 
-  // ─── Core ────────────────────────────────────────────────────────────────
-
   static void _initCore() {
-    // Storage — register interface, bind to implementation
-    // To swap to Hive: replace SharedPreferencesStorage here only
+    // Storage — swap impl here to change backend (Hive, SecureStorage, etc.)
     sl.registerSingleton<ILocalStorage>(
       SharedPreferencesStorage(sl<SharedPreferences>()),
     );
@@ -40,11 +35,12 @@ abstract final class InjectionContainer {
     sl.registerSingleton<DioClient>(DioClient(DioConfig.createBaseOptions()));
     sl.registerSingleton<ApiClient>(ApiClient(sl<DioClient>().dio));
 
-    // Theme
+    // Theme — singleton so state survives navigation
     sl.registerSingleton<ThemeCubit>(ThemeCubit(sl<ILocalStorage>()));
-  }
 
-  // ─── Features ────────────────────────────────────────────────────────────
+    // Connectivity — singleton so stream is shared app-wide
+    sl.registerSingleton<ConnectivityCubit>(ConnectivityCubit());
+  }
 
   static void _initFeatures() {
     PlanetsInjection.register(sl);

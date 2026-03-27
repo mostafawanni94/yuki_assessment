@@ -20,6 +20,7 @@ class _AppState extends State<App> {
   @override
   void initState() {
     super.initState();
+    // Restore persisted theme on startup
     GetIt.I<ThemeCubit>().loadSavedTheme();
   }
 
@@ -28,10 +29,11 @@ class _AppState extends State<App> {
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
     ));
+    // Both cubits are singletons in GetIt — BlocProvider.value shares them
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: GetIt.I<ThemeCubit>()),
-        BlocProvider(create: (_) => ConnectivityCubit()),
+        BlocProvider.value(value: GetIt.I<ConnectivityCubit>()),
       ],
       child: BlocBuilder<ThemeCubit, AppColorScheme>(
         builder: (_, colorScheme) => ScreenUtilInit(
