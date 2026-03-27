@@ -29,6 +29,8 @@ dependencies:
   flutter_screenutil: ^5.9.3
   google_fonts: ^6.2.1
   cupertino_icons: ^1.0.8
+  shared_preferences: ^2.5.3
+  connectivity_plus: ^6.1.4
 
 dev_dependencies:
   flutter_test:
@@ -39,5 +41,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  shared_preferences: ^2.5.3
-  connectivity_plus: ^6.1.4
