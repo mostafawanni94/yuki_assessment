@@ -9,12 +9,12 @@ import 'package:swapi_planets/core/ui/error_handling/error_state_widget.dart';
 import 'package:swapi_planets/core/ui/widgets/glowing_planet_orb.dart';
 import 'package:swapi_planets/core/ui/widgets/star_field_background.dart';
 import 'package:swapi_planets/feature/planet_detail/presentation/bloc/planet_detail_bloc.dart';
-import 'package:swapi_planets/feature/planets/domain/model/planet_model.dart';
+import 'package:swapi_planets/feature/planets/domain/entity/planet.dart';
 
 class PlanetDetailScreen extends StatefulWidget {
   const PlanetDetailScreen({super.key, required this.planet});
   static const String route = '/planet';
-  final PlanetModel planet;
+  final Planet planet;
 
   @override
   State<PlanetDetailScreen> createState() => _PlanetDetailScreenState();
@@ -40,7 +40,7 @@ class _PlanetDetailScreenState extends State<PlanetDetailScreen> {
         value: _bloc,
         child: Scaffold(
           backgroundColor: AppColors.current.bg,
-          body: BlocBuilder<PlanetDetailBloc, BaseState<PlanetModel>>(
+          body: BlocBuilder<PlanetDetailBloc, BaseState<Planet>>(
             builder: (_, state) => state.when(
               init: () => const SizedBox.shrink(),
               loading: () => _DetailLayout(
@@ -69,7 +69,7 @@ class _PlanetDetailScreenState extends State<PlanetDetailScreen> {
 
 class _DetailLayout extends StatelessWidget {
   const _DetailLayout({required this.planet, required this.body});
-  final PlanetModel planet;
+  final Planet planet;
   final Widget body;
 
   @override
@@ -91,7 +91,7 @@ class _DetailLayout extends StatelessWidget {
 
 class _PlanetSliverAppBar extends StatelessWidget {
   const _PlanetSliverAppBar({required this.planet});
-  final PlanetModel planet;
+  final Planet planet;
 
   // Derive orb gradient from planet name hash — same index as list
   List<Color> get _colors {
@@ -125,7 +125,7 @@ class _PlanetSliverAppBar extends StatelessWidget {
 class _AppBarBackground extends StatelessWidget {
   const _AppBarBackground(
       {required this.planet, required this.colors});
-  final PlanetModel planet;
+  final Planet planet;
   final List<Color> colors;
 
   @override
@@ -199,7 +199,7 @@ class _PopulationBadge extends StatelessWidget {
 
 class _DetailBody extends StatelessWidget {
   const _DetailBody({required this.planet});
-  final PlanetModel planet;
+  final Planet planet;
 
   @override
   Widget build(BuildContext context) => Column(
