@@ -61,7 +61,7 @@ class _GlowingPlanetOrbState extends State<GlowingPlanetOrb>
             colors: [
               widget.colors.first.withOpacity(0.9),
               widget.colors.last,
-              AppColors.bg,
+              AppColors.current.bg,
             ],
             stops: const [0.0, 0.6, 1.0],
           ),

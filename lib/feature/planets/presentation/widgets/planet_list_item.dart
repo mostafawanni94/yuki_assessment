@@ -22,23 +22,23 @@ class PlanetListItem extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
         child: Material(
-          color: AppColors.bgCard,
+          color: AppColors.current.bgCard,
           borderRadius: BorderRadius.circular(16.r),
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(16.r),
-            splashColor: AppColors.goldGlow,
+            splashColor: AppColors.current.primaryGlow,
             child: Container(
               padding: EdgeInsets.all(14.r),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: AppColors.border, width: 0.5),
+                border: Border.all(color: AppColors.current.border, width: 0.5),
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppColors.bgCardLight.withOpacity(0.6),
-                    AppColors.bgCard,
+                    AppColors.current.bgCardLight.withOpacity(0.6),
+                    AppColors.current.bgCard,
                   ],
                 ),
               ),
@@ -59,7 +59,7 @@ class PlanetListItem extends StatelessWidget {
                   SizedBox(width: 8.w),
                   Icon(
                     Icons.chevron_right_rounded,
-                    color: AppColors.textMuted,
+                    color: AppColors.current.textMuted,
                     size: 18.r,
                   ),
                 ],
@@ -81,7 +81,7 @@ class _PlanetInfo extends StatelessWidget {
         children: [
           Text(
             planet.name,
-            style: AppTextStyles.headingMedium,
+            style: AppTextStyles.headingMediumCurrent,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -124,14 +124,14 @@ class _Tag extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11.r, color: AppColors.textMuted),
+          Icon(icon, size: 11.r, color: AppColors.current.textMuted),
           SizedBox(width: 3.w),
           ConstrainedBox(
             // Cap at 90px so long values don't overflow the card
             constraints: BoxConstraints(maxWidth: 90.w),
             child: Text(
               label,
-              style: AppTextStyles.bodySmall,
+              style: AppTextStyles.bodySmallCurrent,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -154,13 +154,13 @@ class _FilmChips extends StatelessWidget {
                 padding:
                     EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                 decoration: BoxDecoration(
-                  color: AppColors.goldGlow,
+                  color: AppColors.current.primaryGlow,
                   borderRadius: BorderRadius.circular(20.r),
                   border: Border.all(
-                      color: AppColors.goldDim.withOpacity(0.5),
+                      color: AppColors.current.primaryDim.withOpacity(0.5),
                       width: 0.5),
                 ),
-                child: Text(t, style: AppTextStyles.chip),
+                child: Text(t, style: AppTextStyles.chipCurrent),
               ),
             )
             .toList(),

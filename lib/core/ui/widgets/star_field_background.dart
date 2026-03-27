@@ -77,7 +77,7 @@ class _StarPainter extends CustomPainter {
                   (tick + s.twinkleOffset) * math.pi * 2) *
               0.3 +
           0.7);
-      paint.color = AppColors.textPrimary
+      paint.color = AppColors.current.textPrimary
           .withOpacity(s.opacity * twinkle);
       canvas.drawCircle(
         Offset(s.x * size.width, s.y * size.height),
