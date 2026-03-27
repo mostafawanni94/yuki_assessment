@@ -22,7 +22,7 @@ abstract final class AppStrings {
   static const String sectionOrbital      = 'ORBITAL DATA';
   static const String sectionEnvironment  = 'ENVIRONMENT';
   static const String sectionFilms        = 'APPEARS IN';
-  static const String sectionResidents    = 'KNOWN CHARACTERS';
+  static const String sectionResidents    = 'GALACTIC CITIZENS';
 
   static const String fieldDiameter       = 'Diameter';
   static const String fieldRotation       = 'Rotation';
