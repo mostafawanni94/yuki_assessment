@@ -26,7 +26,7 @@ class PlanetsRepository implements IPlanetsRepository {
       cancelToken: cancelToken,
     );
 
-    if (pageResult is IsError) return IsError(pageResult.error);
+    if (pageResult is IsError<PlanetsPageDto>) return IsError(pageResult.error);
 
     final dto = (pageResult as IsSuccess).model!;
     return _resolveFilmsForList(dto.results, cancelToken);
