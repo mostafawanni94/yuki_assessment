@@ -37,7 +37,7 @@ class _PlanetDetailScreenState extends State<PlanetDetailScreen> {
   }
 
   List<Color> get _colors {
-    final idx = widget.planet.name.codeUnits.fold(0, (s, c) => s + c);
+    final idx = widget.planet.colorIndex;
     return AppColors.current.planetGradientAt(idx);
   }
 

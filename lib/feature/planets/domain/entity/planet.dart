@@ -87,3 +87,12 @@ class Planet {
   @override
   String toString() => 'Planet(name: $name, url: $url)';
 }
+
+  /// Deterministic color index extracted from the SWAPI URL.
+  /// "https://swapi.dev/api/planets/4/" → 4
+  /// Used by both list and detail to guarantee same color.
+  int get colorIndex {
+    final match = RegExp(r'/planets/(\d+)/').firstMatch(url);
+    final n = int.tryParse(match?.group(1) ?? '0') ?? 0;
+    return n > 0 ? n - 1 : 0; // 1-based → 0-based
+  }
