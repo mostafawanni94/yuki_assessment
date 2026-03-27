@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:swapi_planets/core/base_bloc/base_state.dart';
+import 'package:swapi_planets/core/errors/unknown_exception.dart';
 import 'package:swapi_planets/core/result/result.dart';
 import 'package:swapi_planets/feature/planets/domain/model/planet_model.dart';
 import 'package:swapi_planets/feature/planets/domain/repository/i_planets_repository.dart';
@@ -22,8 +23,6 @@ class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
 
   bool get hasMore => _hasMore;
   int get currentPage => _currentPage;
-
-  /// Last known list — safe to read during loading state (pagination).
   List<PlanetModel> get cachedPlanets => List.unmodifiable(_planets);
 
   Future<void> loadPlanets() async {
@@ -48,24 +47,29 @@ class PlanetsBloc extends Cubit<BaseState<List<PlanetModel>>> {
 
   Future<void> _fetchPage() async {
     if (isClosed) return;
-    emit(const Loading());
+    try {
+      emit(const Loading());
 
-    final result = await _repository.getPlanets(
-      page: _currentPage,
-      cancelToken: _cancelToken,
-    );
+      final result = await _repository.getPlanets(
+        page: _currentPage,
+        cancelToken: _cancelToken,
+      );
 
-    if (isClosed) return;
+      if (isClosed) return;
 
-    // Destructure via switch — IsSuccess/IsError are subtypes of MyResult
-    if (result is IsSuccess<List<PlanetModel>>) {
-      final incoming = result.model ?? [];
-      _planets.addAll(incoming);
-      _hasMore = incoming.length == 10;
-      if (_hasMore) _currentPage++;
-      emit(Success(List.unmodifiable(_planets)));
-    } else if (result is IsError<List<PlanetModel>>) {
-      emit(Failure(result.error, retry));
+      if (result is IsSuccess<List<PlanetModel>>) {
+        final incoming = result.model ?? [];
+        _planets.addAll(incoming);
+        _hasMore = incoming.length == 10;
+        if (_hasMore) _currentPage++;
+        emit(Success(List.unmodifiable(_planets)));
+      } else if (result is IsError<List<PlanetModel>>) {
+        emit(Failure(result.error, retry));
+      }
+    } catch (e, stack) {
+      // Catch ANY unhandled exception — show error state instead of silent crash
+      debugPrint('[PlanetsBloc] _fetchPage error: $e\n$stack');
+      if (!isClosed) emit(Failure(const UnknownException(), retry));
     }
   }
 

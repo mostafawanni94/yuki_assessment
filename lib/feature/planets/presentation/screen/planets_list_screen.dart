@@ -23,36 +23,27 @@ class PlanetsListScreen extends StatefulWidget {
   State<PlanetsListScreen> createState() => _PlanetsListScreenState();
 }
 
-class _PlanetsListScreenState extends State<PlanetsListScreen>
-    with SingleTickerProviderStateMixin {
+class _PlanetsListScreenState extends State<PlanetsListScreen> {
   late final PlanetsBloc _bloc;
-  late final ScrollController _scroll;
-  late final AnimationController _headerCtrl;
-  late final Animation<double> _headerFade;
+  final ScrollController _scroll = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _bloc = GetIt.I<PlanetsBloc>();
-    _scroll = ScrollController()..addListener(_onScroll);
-    _headerCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 700));
-    _headerFade =
-        CurvedAnimation(parent: _headerCtrl, curve: Curves.easeOut);
+    _scroll.addListener(_onScroll);
     _bloc.loadPlanets();
-    _headerCtrl.forward();
   }
 
   @override
   void dispose() {
     _scroll.dispose();
-    _headerCtrl.dispose();
     super.dispose();
   }
 
   void _onScroll() {
-    if (_scroll.position.pixels >=
-        _scroll.position.maxScrollExtent - 200) {
+    if (!_scroll.hasClients) return;
+    if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 200) {
       _bloc.loadMore();
     }
   }
@@ -62,148 +53,87 @@ class _PlanetsListScreenState extends State<PlanetsListScreen>
         value: _bloc,
         child: Scaffold(
           backgroundColor: AppColors.bg,
+          appBar: _buildAppBar(),
           body: Stack(children: [
             const Positioned.fill(child: StarFieldBackground()),
-            CustomScrollView(
-              controller: _scroll,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                _buildSliverAppBar(),
-                BlocBuilder<PlanetsBloc, BaseState<List<PlanetModel>>>(
-                  builder: (_, state) => state.when(
-                    init: () =>
-                        const SliverToBoxAdapter(child: SizedBox.shrink()),
-                    loading: _buildLoading,
-                    success: (planets) => _buildSuccess(planets ?? []),
-                    failure: (error, retry) => _buildFailure(error, retry),
-                  ),
-                ),
-              ],
+            BlocBuilder<PlanetsBloc, BaseState<List<PlanetModel>>>(
+              builder: (_, state) => state.when(
+                init: () => const SizedBox.shrink(),
+                loading: _buildLoading,
+                success: (planets) => _buildSuccess(planets ?? []),
+                failure: (error, retry) => _buildFailure(error, retry),
+              ),
             ),
           ]),
         ),
       );
 
-  // ─── AppBar ───────────────────────────────────────────────────────────────
+  // ─── AppBar (always visible) ──────────────────────────────────────────────
 
-  Widget _buildSliverAppBar() => SliverAppBar(
-        expandedHeight: 140.h,
-        floating: true,
-        snap: true,
-        backgroundColor: Colors.transparent,
-        flexibleSpace: FlexibleSpaceBar(
-          collapseMode: CollapseMode.parallax,
-          background: _HeaderBanner(animation: _headerFade),
+  PreferredSizeWidget _buildAppBar() => AppBar(
+        backgroundColor: AppColors.bg,
+        elevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(AppStrings.planetsTitle,
+                style: AppTextStyles.displayMedium
+                    .copyWith(color: AppColors.gold)),
+            Text(AppStrings.planetsSubtitle,
+                style: AppTextStyles.bodySmall),
+          ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
             tooltip: AppStrings.refresh,
             onPressed: _bloc.loadPlanets,
-            color: AppColors.textSecondary,
           ),
-          SizedBox(width: 8.w),
         ],
       );
 
   // ─── State builders ───────────────────────────────────────────────────────
 
   Widget _buildLoading() {
-    // Page 1 → full shimmer. Page 2+ → keep visible list + append spinner.
     final cached = _bloc.cachedPlanets;
     if (cached.isEmpty) {
-      return const SliverFillRemaining(
-          child: PlanetsLoadingShimmer());
+      return const PlanetsLoadingShimmer();
     }
-    return SliverToBoxAdapter(
-      child: _PlanetsList(
-        planets: cached,
-        isLoadingMore: true,
-        onTap: _navigateToDetail,
-      ),
+    return _PlanetsList(
+      planets: cached,
+      scroll: _scroll,
+      isLoadingMore: true,
+      onTap: _navigateToDetail,
     );
   }
 
   Widget _buildSuccess(List<PlanetModel> planets) {
     if (planets.isEmpty) {
-      return SliverFillRemaining(
-        child: Center(
-          child: ErrorStateWidget.empty(
-            emptyTitle: AppStrings.emptyPlanets,
-            emptyMessage: AppStrings.emptyPlanetsMsg,
-          ),
+      return Center(
+        child: ErrorStateWidget.empty(
+          emptyTitle: AppStrings.emptyPlanets,
+          emptyMessage: AppStrings.emptyPlanetsMsg,
         ),
       );
     }
-    return SliverToBoxAdapter(
-      child: RefreshIndicator(
-        onRefresh: _bloc.loadPlanets,
-        color: AppColors.gold,
-        backgroundColor: AppColors.bgCard,
-        child: _PlanetsList(
-          planets: planets,
-          isLoadingMore: false,
-          onTap: _navigateToDetail,
-        ),
+    return RefreshIndicator(
+      onRefresh: _bloc.loadPlanets,
+      color: AppColors.gold,
+      backgroundColor: AppColors.bgCard,
+      child: _PlanetsList(
+        planets: planets,
+        scroll: _scroll,
+        isLoadingMore: false,
+        onTap: _navigateToDetail,
       ),
     );
   }
 
-  Widget _buildFailure(dynamic error, VoidCallback retry) =>
-      SliverFillRemaining(
-        child:
-            Center(child: ErrorStateWidget(error: error, onRetry: retry)),
-      );
+  Widget _buildFailure(BaseException error, VoidCallback retry) =>
+      Center(child: ErrorStateWidget(error: error, onRetry: retry));
 
   void _navigateToDetail(PlanetModel planet) =>
       context.push(PlanetDetailScreen.route, extra: planet);
-}
-
-// ─── Header banner ────────────────────────────────────────────────────────────
-
-class _HeaderBanner extends StatelessWidget {
-  const _HeaderBanner({required this.animation});
-  final Animation<double> animation;
-
-  @override
-  Widget build(BuildContext context) => FadeTransition(
-        opacity: animation,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(20.w, 56.h, 20.w, 12.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Row(children: [
-                Container(
-                  width: 3.w,
-                  height: 28.h,
-                  decoration: BoxDecoration(
-                    color: AppColors.gold,
-                    borderRadius: BorderRadius.circular(2.r),
-                    boxShadow: [
-                      BoxShadow(
-                          color: AppColors.goldGlow,
-                          blurRadius: 8,
-                          spreadRadius: 1)
-                    ],
-                  ),
-                ),
-                SizedBox(width: 10.w),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(AppStrings.planetsTitle,
-                        style: AppTextStyles.displayMedium),
-                    Text(AppStrings.planetsSubtitle,
-                        style: AppTextStyles.bodySmall),
-                  ],
-                ),
-              ]),
-            ],
-          ),
-        ),
-      );
 }
 
 // ─── Planet list ──────────────────────────────────────────────────────────────
@@ -211,17 +141,19 @@ class _HeaderBanner extends StatelessWidget {
 class _PlanetsList extends StatelessWidget {
   const _PlanetsList({
     required this.planets,
+    required this.scroll,
     required this.isLoadingMore,
     required this.onTap,
   });
   final List<PlanetModel> planets;
+  final ScrollController scroll;
   final bool isLoadingMore;
   final void Function(PlanetModel) onTap;
 
   @override
   Widget build(BuildContext context) => ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
+        controller: scroll,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.only(top: 8.h, bottom: 24.h),
         itemCount: planets.length + (isLoadingMore ? 1 : 0),
         itemBuilder: (_, i) {
@@ -243,8 +175,7 @@ class _LoadMoreSpinner extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: 20.h),
         child: Center(
           child: SizedBox(
-            width: 20.r,
-            height: 20.r,
+            width: 20.r, height: 20.r,
             child: CircularProgressIndicator(
                 strokeWidth: 1.5, color: AppColors.gold),
           ),

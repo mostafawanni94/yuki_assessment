@@ -27,8 +27,8 @@ class PlanetsRepository implements IPlanetsRepository {
       return IsError(pageResult.error);
     }
 
-    final page_ = (pageResult as IsSuccess).model!;
-    return _resolveListFilms(page_.results, cancelToken);
+    final page_ = (pageResult as IsSuccess<PlanetsPageModel>).model;
+    return _resolveListFilms(page_?.results ?? [], cancelToken);
   }
 
   @override
