@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:swapi_planets/core/theme/app_colors.dart';
 import 'package:swapi_planets/core/theme/app_text_styles.dart';
 import 'package:swapi_planets/core/ui/widgets/glowing_planet_orb.dart';
-import 'package:swapi_planets/feature/planets/domain/model/planet_model.dart';
+import 'package:swapi_planets/feature/planets/domain/entity/planet.dart';
 
 /// Single planet card in the list.
 class PlanetListItem extends StatelessWidget {
@@ -14,7 +14,7 @@ class PlanetListItem extends StatelessWidget {
     required this.onTap,
   });
 
-  final PlanetModel planet;
+  final Planet planet;
   final int index;
   final VoidCallback onTap;
 
@@ -72,7 +72,7 @@ class PlanetListItem extends StatelessWidget {
 
 class _PlanetInfo extends StatelessWidget {
   const _PlanetInfo({required this.planet});
-  final PlanetModel planet;
+  final Planet planet;
 
   @override
   Widget build(BuildContext context) => Column(

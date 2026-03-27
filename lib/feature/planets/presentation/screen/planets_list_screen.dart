@@ -13,7 +13,7 @@ import 'package:swapi_planets/core/ui/error_handling/error_state_widget.dart';
 import 'package:swapi_planets/core/ui/widgets/star_field_background.dart';
 import 'package:swapi_planets/core/ui/widgets/theme_toggle_button.dart';
 import 'package:swapi_planets/feature/planet_detail/presentation/screen/planet_detail_screen.dart';
-import 'package:swapi_planets/feature/planets/domain/model/planet_model.dart';
+import 'package:swapi_planets/feature/planets/domain/entity/planet.dart';
 import 'package:swapi_planets/feature/planets/presentation/bloc/planets_bloc.dart';
 import 'package:swapi_planets/feature/planets/presentation/widgets/planet_list_item.dart';
 import 'package:swapi_planets/feature/planets/presentation/widgets/planets_loading_shimmer.dart';
@@ -62,7 +62,7 @@ class _PlanetsListScreenState extends State<PlanetsListScreen> {
             appBar: _buildAppBar(scheme),
             body: Stack(children: [
               const Positioned.fill(child: StarFieldBackground()),
-              BlocBuilder<PlanetsBloc, BaseState<List<PlanetModel>>>(
+              BlocBuilder<PlanetsBloc, BaseState<List<Planet>>>(
                 builder: (_, state) => state.when(
                   init: () => const SizedBox.shrink(),
                   loading: _buildLoading,
@@ -111,7 +111,7 @@ class _PlanetsListScreenState extends State<PlanetsListScreen> {
         isLoadingMore: true, onTap: _navigateToDetail);
   }
 
-  Widget _buildSuccess(List<PlanetModel> planets) {
+  Widget _buildSuccess(List<Planet> planets) {
     if (planets.isEmpty) {
       return Center(
         child: ErrorStateWidget.empty(
@@ -133,7 +133,7 @@ class _PlanetsListScreenState extends State<PlanetsListScreen> {
   Widget _buildFailure(BaseException error, VoidCallback retry) =>
       Center(child: ErrorStateWidget(error: error, onRetry: retry));
 
-  void _navigateToDetail(PlanetModel planet) =>
+  void _navigateToDetail(Planet planet) =>
       context.push(PlanetDetailScreen.route, extra: planet);
 }
 
@@ -144,10 +144,10 @@ class _PlanetsList extends StatelessWidget {
     required this.isLoadingMore,
     required this.onTap,
   });
-  final List<PlanetModel> planets;
+  final List<Planet> planets;
   final ScrollController scroll;
   final bool isLoadingMore;
-  final void Function(PlanetModel) onTap;
+  final void Function(Planet) onTap;
 
   @override
   Widget build(BuildContext context) => ListView.builder(
