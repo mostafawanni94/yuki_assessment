@@ -104,7 +104,7 @@ class PlanetsRepository implements IPlanetsRepository {
               .map((url) => titleMap[url] ?? '')
               .where((t) => t.isNotEmpty)
               .toList();
-          return PlanetMapper.toEntity(dto, films: films);
+          return PlanetMapper.toEntity(dto, films: films, residentUrls: dto.residentUrls);
         }).toList(),
       );
     } catch (_) {

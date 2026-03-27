@@ -5,11 +5,14 @@ import 'package:swapi_planets/feature/planets/domain/entity/planet.dart';
 /// Single Responsibility: shape transformation only.
 abstract final class PlanetMapper {
   /// Maps [PlanetDto] to [Planet] entity.
-  /// [films] and [residents] are pre-resolved strings from repository.
+  ///
+  /// [films]        — pre-resolved film titles (from repository).
+  /// [residentUrls] — raw resident URLs kept for lazy resolution on detail.
+  ///                  Defaults to [] when not provided (e.g. in tests).
   static Planet toEntity(
     PlanetDto dto, {
     List<String> films = const [],
-    List<String> residents = const [],
+    List<String> residentUrls = const [],
   }) =>
       Planet(
         name:           dto.name,
@@ -22,7 +25,7 @@ abstract final class PlanetMapper {
         surfaceWater:   dto.surfaceWater,
         population:     dto.population,
         films:          films,
-        residents:      residents,
+        residents:      residentUrls,   // raw URLs — resolved lazily on detail
         url:            dto.url,
         created:        dto.created,
         edited:         dto.edited,
